@@ -38,9 +38,9 @@
     type="text/javascript"></script>
     
 -->
-<script>
+<!--script>
   //traceur.options.experimental = true;
-</script>
+</script-->
  
 <script>
 
@@ -81,128 +81,130 @@ function createTypeEndpoint(type, isInput) {
 </script>
  
 <script> 
- 
-var print = function () {
-    var output = document.getElementById("output");
-    return function(text) {
-        output.innerText = output.innerText + "\n" + String(text); 
-    };
-}();
+    var print = function () {
+        var output = document.getElementById("output");
+        return function (text) {
+            output.innerText = output.innerText + "\n" + String(text);
+        };
+    }();
 
-var num = 1;
+    var num = 1;
 
-function createInputBlock() {
-    var block = document.createElement('div');   
-    block.className = 'block';
-    block.id = "inputBlock" + num;
-    document.getElementById("content").appendChild(block);
-    
-    var input = document.createElement('input');
-    block.appendChild(input);
-    
-    // this starts propagating change
-    input.addEventListener("change", function() {
-        alert("running computations");
-        run(block, true);
-    }, false);
-    // this just passes current value (and is used by input.change)
-    block.process = function() { 
-        return input.text;
-    };
-    
-    jsPlumb.draggable(block);
-    var endpoint = createTypeEndpoint("int", false);
-    jsPlumb.addEndpoint(block, { anchor:[1, 0.5, 1, 0] }, endpoint);
-}
+    function createInputBlock() {
+        var block = document.createElement('div');
+        block.className = 'block';
+        block.id = "inputBlock" + num;
+        document.getElementById("content").appendChild(block);
 
-function createOutputBlock() {
-    var block = document.createElement('div');   
-    block.className = 'block';
-    block.id = "outputBlock" + num;
-    block.type = "outputBlock"; //temp
-    document.getElementById("content").appendChild(block);
-    
-    var input = document.createElement('input');
-    block.appendChild(input);
-    
-    block.process = function(input) {
-        input.text = input[0];
-    };
-    
-    jsPlumb.draggable(block);
-    var endpoint = createTypeEndpoint("int", true);
-    jsPlumb.addEndpoint(block, { anchor:[0, 0.5, -1, 0] }, endpoint);
-}
+        var input = document.createElement('input');
+        block.appendChild(input);
 
-function createBlock (f) {
-    var block = document.createElement('div');   
-    block.className = 'block';
-    block.innerText = f.name;
-    block.id = String(num++);
-    document.getElementById("content").appendChild(block);
-    
-    jsPlumb.draggable(block);
-    
-    block.process = f;
-    
-    f.signature.outs.forEach(function(elem, i) {
-        // this formula leaves space before first and after last element
-        var pos = (1.0 / (f.signature.outs.length+1)) * (i+1);
-        var endpoint = createTypeEndpoint(elem, false);
-        
-        jsPlumb.addEndpoint(block, { anchor:[1, pos, 1, 0] }, endpoint);
+        // this starts propagating change
+        input.addEventListener("change", function () {
+            alert("running computations");
+            run(block, true);
+        }, false);
+        // this just passes current value (and is used by input.change)
+        block.process = function () {
+            return this.value;
+        }.bind(input);
+
+        jsPlumb.draggable(block);
+        var endpoint = createTypeEndpoint("int", false);
+        jsPlumb.addEndpoint(block, { anchor: [1, 0.5, 1, 0] }, endpoint);
+    }
+
+    function createOutputBlock() {
+        var block = document.createElement('div');
+        block.className = 'block';
+        block.id = "outputBlock" + num;
+        block.type = "outputBlock"; //temp
+        document.getElementById("content").appendChild(block);
+
+        var input = document.createElement('input');
+        block.appendChild(input);
+
+        block.process = function (input) {
+            this.value = input;
+        }.bind(input);
+
+        jsPlumb.draggable(block);
+        var endpoint = createTypeEndpoint("int", true);
+        jsPlumb.addEndpoint(block, { anchor: [0, 0.5, -1, 0] }, endpoint);
+    }
+
+    function createBlock(f) {
+        var block = document.createElement('div');
+        block.className = 'block';
+        block.innerText = f.name;
+        block.id = String(num++);
+        document.getElementById("content").appendChild(block);
+
+        jsPlumb.draggable(block);
+
+        block.process = f;
+
+        f.signature.outs.forEach(function (elem, i) {
+            // this formula leaves space before first and after last element
+            var pos = (1.0 / (f.signature.outs.length + 1)) * (i + 1);
+            var endpoint = createTypeEndpoint(elem, false);
+
+            jsPlumb.addEndpoint(block, { anchor: [1, pos, 1, 0] }, endpoint);
+        });
+
+        f.signature.ins.forEach(function (elem, i) {
+            // this formula leaves space before first and after last element
+            var pos = (1.0 / (f.signature.ins.length + 1)) * (i + 1);
+            var endpoint = createTypeEndpoint(elem, true);
+
+            jsPlumb.addEndpoint(block, { anchor: [0, pos, -1, 0] }, endpoint);
+        });
+    }
+
+    function add(x, y) {
+        return x + y;
+    }
+    add.signature = { ins: ["int", "int"], outs: ["int"] };
+
+    function mul(x, y) {
+        return x * y;
+    }
+    mul.signature = { ins: ["int", "int"], outs: ["int"] };
+
+    function toUpper(str) {
+        return str;
+    }
+    toUpper.signature = { ins: ["string"], outs: ["string"] };    
+
+    // more like "poke"
+    function run(node, propagate) {
+        // todo: profile that vs select
+        var inputs = jsPlumb.getAllConnections().filter(function (conn) { return conn.target === node });
+        var inputValues = inputs.map(function (input) { return run(input.source, false); });
+
+        var outputValues = node.process.apply(null, inputValues);
+
+        if (node.type === "outputBlock") {
+            return;
+        }
+
+        if (propagate) {
+            var outputs = jsPlumb.select({ source: node.id });
+            outputs.each(function (output) { run(output.target, true); });
+        }
+        else {
+            return outputValues;
+        }
+    }
+
+    $(function () {
+        createInputBlock();
+        createBlock(add);
+        createBlock(mul);
+        createBlock(toUpper);
+        createOutputBlock();
     });
-    
-    f.signature.ins.forEach(function(elem, i) {
-        // this formula leaves space before first and after last element
-        var pos = (1.0 / (f.signature.ins.length+1)) * (i+1);
-        var endpoint = createTypeEndpoint(elem, true);
-    
-        jsPlumb.addEndpoint(block, { anchor:[0, pos, -1, 0] }, endpoint);
-    });
-}
 
-function add(x, y) {
-    return x + y;
-}
-add.signature = { ins : ["int", "int"], outs : ["int"] };
-
-function mul(x, y) {
-    return x * y;
-}
-mul.signature = { ins : ["int", "int"], outs : ["int"] };
-
-function toUpper(str) {
-    return str;
-}
-toUpper.signature = { ins: ["string"], outs: ["string"] };
-
-createInputBlock();
-createBlock(add);
-createBlock(mul);
-createBlock(toUpper);
-createOutputBlock();
-
-// more like "poke"
-function run(node, propagate) {
-    var inputs = jsPlumb.getConnections({ target: node });
-    var inputValues = inputs.map(function(input){ run(input.source, false); });
-
-    var outputValues = node.process.apply(null, inputValues);
-   
-    if (node.type === "outputBlock") {
-        return;
-    }
-    
-    if (propagate) {
-        var outputs = jsPlumb.getConnections({ source: node });
-        outputs.forEach(function(output){ run(output.target, true); });
-    }
-    else {
-        return outputValues;
-    }
-}
- 
 </script>
  
 </body>
