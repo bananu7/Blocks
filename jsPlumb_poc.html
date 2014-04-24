@@ -1,0 +1,196 @@
+ <!doctype html>
+ <html><head></head>
+ 
+ <head>
+    <style type="text/css">
+        div.block {
+            background-color: #36C;
+            min-width: 200px;
+            height: 100px;
+            float: left;
+            padding: 10px;
+            
+            text-align: center;
+            vertical-align: middle;
+            font-size: 3em;
+            
+            position:absolute;
+        }
+    </style>
+ </head>
+ 
+<body>
+
+<pre id="output"></pre>
+<div id="content"></div>
+
+<script src="jquery-2.1.0.js" type="text/javascript"></script>
+<script src="jquery-ui-1.10.4.min.js" type="text/javascript"></script>
+<script src="jquery.jsPlumb-1.5.5-min.js" type="text/javascript"></script>
+
+<!--script src="underscore-min.js" type="text/javascript"></script-->
+<script src="traceur/traceur.js" type="text/javascript"></script>
+<script src="traceur/bootstrap.js" type="text/javascript"></script>
+<!--
+<script src="https://traceur-compiler.googlecode.com/git/bin/traceur.js" 
+    type="text/javascript"></script>
+<script src="https://traceur-compiler.googlecode.com/git/src/bootstrap.js"
+    type="text/javascript"></script>
+    
+-->
+<script>
+  traceur.options.experimental = true;
+</script>
+ 
+<script>
+
+var exampleDropOptions = {
+            tolerance:"touch",
+            hoverClass:"dropHover",
+            activeClass:"dragActive",
+            
+            connector: ["Bezier", { curviness:63 } ],
+            maxConnections:3,
+            endpoint:["Dot", { radius:11 }],
+        };
+        
+function getEndpointColorFromType(type) {
+    switch (type) {
+    case "int" : return "#3399FF";
+    case "string" : return "#FF9933";
+    default: return "#999999";
+    }
+}
+
+function createTypeEndpoint(type, isInput) {
+    var color = getEndpointColorFromType(type);
+
+    return {
+        paintStyle:{ fillStyle:color },
+
+        scope: type,
+        connectorStyle:{ strokeStyle:color, lineWidth:6 },
+
+        dropOptions : exampleDropOptions,
+        
+        isSource: !isInput,
+        isTarget: isInput,
+    }
+}
+
+</script>
+ 
+<script type="module"> 
+ 
+var print = function () {
+    var output = document.getElementById("output");
+    return function(text) {
+        output.innerText = output.innerText + "\n" + String(text); 
+    };
+}();
+
+var num = 1;
+
+function createInputBlock() {
+    let block = document.createElement('div');   
+    block.className = 'block';
+    block.id = "inputBlock" + num;
+    document.getElementById("content").appendChild(block);
+    
+    let input = document.createElement('input');
+    block.appendChild(input);
+    
+    input.change = function(newText) {
+        run(block, newText);
+    };
+    
+    jsPlumb.draggable(block);
+    var endpoint = createTypeEndpoint("int", false);
+    jsPlumb.addEndpoint(block, { anchor:[1, 0.5, 1, 0] }, endpoint);
+}
+
+function createOutputBlock() {
+    let block = document.createElement('div');   
+    block.className = 'block';
+    block.id = "outputBlock" + num;
+    block.type = "outputBlock"; //temp
+    document.getElementById("content").appendChild(block);
+    
+    let input = document.createElement('input');
+    block.appendChild(input);
+    
+    block.process = function(input) {
+        input.text = input;  
+    };
+    
+    jsPlumb.draggable(block);
+    var endpoint = createTypeEndpoint("int", true);
+    jsPlumb.addEndpoint(block, { anchor:[0, 0.5, -1, 0] }, endpoint);
+}
+
+function createBlock (f) {
+    let block = document.createElement('div');   
+    block.className = 'block';
+    block.innerText = f.name;
+    block.id = String(num++);
+    document.getElementById("content").appendChild(block);
+    
+    jsPlumb.draggable(block);
+    
+    f.signature.outs.forEach(function(elem, i) {
+        // this formula leaves space before first and after last element
+        var pos = (1.0 / (f.signature.outs.length+1)) * (i+1);
+        var endpoint = createTypeEndpoint(elem, false);
+        
+        jsPlumb.addEndpoint(block, { anchor:[1, pos, 1, 0] }, endpoint);
+    });
+    
+    f.signature.ins.forEach(function(elem, i) {
+        // this formula leaves space before first and after last element
+        var pos = (1.0 / (f.signature.ins.length+1)) * (i+1);
+        var endpoint = createTypeEndpoint(elem, true);
+    
+        jsPlumb.addEndpoint(block, { anchor:[0, pos, -1, 0] }, endpoint);
+    });
+}
+
+function add(x, y) {
+    return x + y;
+}
+add.signature = { ins : ["int", "int"], outs : ["int"] };
+
+function mul(x, y) {
+    return x * y;
+}
+mul.signature = { ins : ["int", "int"], outs : ["int"] };
+
+function toUpper(str) {
+    return str;
+}
+toUpper.signature = { ins: ["string"], outs: ["string"] };
+
+createInputBlock();
+createBlock(add);
+createBlock(mul);
+createBlock(toUpper);
+createOutputBlock();
+
+function run(input, node) {
+    var output = node.process(input);
+
+    if (node.type === "outputBlock") {
+        return;
+    }
+    
+    var connections = jsPlumb.getConnections({
+        source: node
+    });
+    
+    connections.forEach(connection => run(output, connection.target));
+}
+ 
+</script>
+ 
+</body>
+ 
+ </html>
