@@ -110,7 +110,7 @@ function createTypeEndpoint(type, isInput) {
         }.bind(input);
 
         jsPlumb.draggable(block);
-        var endpoint = createTypeEndpoint("int", false);
+        var endpoint = createTypeEndpoint("string", false);
         jsPlumb.addEndpoint(block, { anchor: [1, 0.5, 1, 0] }, endpoint);
     }
 
@@ -129,7 +129,7 @@ function createTypeEndpoint(type, isInput) {
         }.bind(input);
 
         jsPlumb.draggable(block);
-        var endpoint = createTypeEndpoint("int", true);
+        var endpoint = createTypeEndpoint("string", true);
         jsPlumb.addEndpoint(block, { anchor: [0, 0.5, -1, 0] }, endpoint);
     }
 
@@ -174,7 +174,17 @@ function createTypeEndpoint(type, isInput) {
     function toUpper(str) {
         return str;
     }
-    toUpper.signature = { ins: ["string"], outs: ["string"] };    
+    toUpper.signature = { ins: ["string"], outs: ["string"] };
+
+    function toInt(str) {
+        return parseInt(str, 10);
+    }
+    toInt.signature = { ins: ["string"], outs: ["int"] };
+
+    function toString(num) {
+        return String(num);
+    }
+    toString.signature = { ins: ["int"], outs: ["string"] };
 
     // more like "poke"
     function run(node, propagate) {
@@ -201,7 +211,8 @@ function createTypeEndpoint(type, isInput) {
         createInputBlock();
         createBlock(add);
         createBlock(mul);
-        createBlock(toUpper);
+        createBlock(toInt);
+        createBlock(toString);
         createOutputBlock();
     });
 
