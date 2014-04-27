@@ -1,7 +1,8 @@
- <!doctype html>
- <html><head></head>
+<!doctype html>
+<html>
  
- <head>
+<head>
+    <title>Blocks Proof of Concept</title>
     <style type="text/css">
         div.block {
             background-color: #36C;
@@ -49,7 +50,7 @@ var exampleDropOptions = {
             hoverClass:"dropHover",
             activeClass:"dragActive",
             
-            connector: ["Bezier", { curviness:63 } ],
+            connector: ["Bezier", { curviness:1 } ],
             maxConnections:3,
             endpoint:["Dot", { radius:11 }],
         };
@@ -80,7 +81,7 @@ function createTypeEndpoint(type, isInput) {
 
 </script>
  
-<script> 
+<script>
     var print = function () {
         var output = document.getElementById("output");
         return function (text) {
@@ -89,6 +90,15 @@ function createTypeEndpoint(type, isInput) {
     }();
 
     var num = 1;
+    var objects = {};
+    map = function (o, fn) {
+        var result = [];
+        for (var objectName in objects) {
+            var object = objects[objectName];
+            result.push(fn(object));
+        }
+        return result;
+    };
 
     function createInputBlock() {
         var block = document.createElement('div');
@@ -105,9 +115,15 @@ function createTypeEndpoint(type, isInput) {
             run(block, true);
         }, false);
         // this just passes current value (and is used by input.change)
+
         block.process = function () {
             return this.value;
         }.bind(input);
+
+        objects[block.id] = {
+            process: block.process,
+            id: block.id,
+        };
 
         jsPlumb.draggable(block);
         var endpoint = createTypeEndpoint("string", false);
@@ -128,6 +144,11 @@ function createTypeEndpoint(type, isInput) {
             this.value = input;
         }.bind(input);
 
+        objects[block.id] = {
+            process: block.process,
+            id: block.id,
+        };
+
         jsPlumb.draggable(block);
         var endpoint = createTypeEndpoint("string", true);
         jsPlumb.addEndpoint(block, { anchor: [0, 0.5, -1, 0] }, endpoint);
@@ -136,13 +157,19 @@ function createTypeEndpoint(type, isInput) {
     function createBlock(f) {
         var block = document.createElement('div');
         block.className = 'block';
-        block.innerText = f.name;
+        block.textContent = f.name;
         block.id = String(num++);
         document.getElementById("content").appendChild(block);
 
         jsPlumb.draggable(block);
 
         block.process = f;
+
+        // todo: repetition
+        objects[block.id] = {
+            process: block.process,
+            id: block.id,
+        };
 
         f.signature.outs.forEach(function (elem, i) {
             // this formula leaves space before first and after last element
@@ -161,6 +188,28 @@ function createTypeEndpoint(type, isInput) {
         });
     }
 
+
+    function exportBlocks() {
+        var connections = jsPlumb.getAllConnections();
+        var exportObjects = map(objects, function (object) {
+            var $position = $("#" + object.id).position();
+
+            // "object" represents logical layer
+            // "block" part of it is the display/editor layer
+            object.block = {
+                position: { x: $position.left, y: $position.top },
+            };
+
+            return object;
+        });
+
+        return {
+            connections: connections,
+            objects: exportObjects,
+        };
+    }
+
+    // Usercode
     function add(x, y) {
         return x + y;
     }
