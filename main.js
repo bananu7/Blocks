@@ -1,11 +1,9 @@
 
 var exampleDropOptions = {
-    tolerance: "touch",
-    hoverClass: "dropHover",
+    //tolerance: "touch",
     activeClass: "dragActive",
 
     connector: ["Bezier", { curviness: 1 }],
-    maxConnections: 3,
     endpoint: ["Dot", { radius: 11 }],
 };
 
@@ -30,6 +28,7 @@ function createTypeEndpoint(type, isInput) {
 
         isSource: !isInput,
         isTarget: isInput,
+        maxConnections: (isInput) ? 1 : -1,
     }
 }
 
@@ -353,6 +352,10 @@ function registerFunction(f, name = "") {
 }
 
 $(function () {
+    jsPlumb.importDefaults({
+        EndpointHoverStyle : "cursor: pointer;",
+    });
+
     registerFunction(add);
     registerFunction(mul);
     registerFunction(toInt);
