@@ -132,18 +132,18 @@ var num = 1;
 var objects = new Map();
 var functions = new Map();
 
-function createInputBlock() {
+function createInput() {
     var block = document.createElement('div');
-    block.className = 'block';
-    block.id = "inputBlock" + num;
-    document.getElementById("content").appendChild(block);
+    block.className = 'socket';
+    block.id = "input" + num++;
+    document.getElementById("inputSidebar").appendChild(block);
 
     var input = document.createElement('input');
     block.appendChild(input);
 
     // this starts propagating change
     input.addEventListener("change", function () {
-        alert("running computations");
+        //alert("running computations");
         run(block, true);
     }, false);
     // this just passes current value (and is used by input.change)
@@ -152,23 +152,21 @@ function createInputBlock() {
         return this.value;
     }.bind(input);
 
-    objects.insert(block.id, {
+    /*objects.insert(block.id, {
         process: block.process,
         id: block.id,
         blockHandle: block,
-    });
+    });*/
 
-    jsPlumb.draggable(block);
     var endpoint = createTypeEndpoint("string", false);
     jsPlumb.addEndpoint(block, { anchor: [1, 0.5, 1, 0] }, endpoint);
 }
 
-function createOutputBlock() {
+function createOutput() {
     var block = document.createElement('div');
-    block.className = 'block';
-    block.id = "outputBlock" + num;
-    block.type = "outputBlock"; //temp
-    document.getElementById("content").appendChild(block);
+    block.className = 'socket';
+    block.id = "output" + num++;
+    document.getElementById("outputSidebar").appendChild(block);
 
     var input = document.createElement('input');
     block.appendChild(input);
@@ -177,13 +175,12 @@ function createOutputBlock() {
         this.value = input;
     }.bind(input);
 
-    objects.insert(block.id,{
+    /*objects.insert(block.id,{
         process: block.process,
         id: block.id,
         blockHandle: block,
-    });
+    });*/
 
-    jsPlumb.draggable(block);
     var endpoint = createTypeEndpoint("string", true);
     jsPlumb.addEndpoint(block, { anchor: [0, 0.5, -1, 0] }, endpoint);
 }
@@ -363,6 +360,9 @@ $(function () {
 
     $("#toolboxSidebar").append('<input type="button" onclick="localStorage[1] = exportBlocks()" value="export"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="createInput()" value="new input"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="createOutput()" value="new output"></input>');
+
     /*createInputBlock();
     createBlock(add);
     createBlock(mul);
