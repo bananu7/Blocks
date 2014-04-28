@@ -348,7 +348,7 @@ function registerFunction(f, name = "") {
 
     functions.insert(name, f);
 
-    $("#toolboxSidebar").append('<input type="button" onclick="createBlock(\'' + name + '\')" value="' + name + '"></input><br>');
+    $("#toolboxSidebar").append('<input type="button" onclick="createBlock(\'' + name + '\')" value="' + name + '"></input>');
 }
 
 $(function () {
@@ -361,8 +361,8 @@ $(function () {
     registerFunction(toInt);
     registerFunction(toStr);
 
-    $("#toolboxSidebar").append('<input type="button" onclick="localStorage[1] = exportBlocks()" value="export"></input><br>');
-    $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input><br>');
+    $("#toolboxSidebar").append('<input type="button" onclick="localStorage[1] = exportBlocks()" value="export"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input>');
     /*createInputBlock();
     createBlock(add);
     createBlock(mul);
