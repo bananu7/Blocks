@@ -52,6 +52,10 @@ function mapM_(f, xs) {
     }
 }
 
+function forM(xs, f) {
+    mapM_(f, xs);
+}
+
 function* filter(pred, xs) {
     for (var x of xs) {
         if (!pred(x)) {
@@ -152,6 +156,7 @@ function createInputBlock() {
     objects.insert(block.id, {
         process: block.process,
         id: block.id,
+        blockHandle: block,
     });
 
     jsPlumb.draggable(block);
@@ -176,6 +181,7 @@ function createOutputBlock() {
     objects.insert(block.id,{
         process: block.process,
         id: block.id,
+        blockHandle: block,
     });
 
     jsPlumb.draggable(block);
@@ -183,11 +189,14 @@ function createOutputBlock() {
     jsPlumb.addEndpoint(block, { anchor: [0, 0.5, -1, 0] }, endpoint);
 }
 
-function createBlock(f) {
+function createBlock(fname, id = "") {
+    var f = functions.at(fname);
+    if (!id) id = String(num++)
+
     var block = document.createElement('div');
     block.className = 'block';
     block.textContent = f.name;
-    block.id = String(num++);
+    block.id = id;
     document.getElementById("content").appendChild(block);
 
     jsPlumb.draggable(block);
@@ -196,8 +205,9 @@ function createBlock(f) {
 
     // todo: repetition
     objects.insert(block.id,{
-        process: block.process,
+        fname: fname,
         id: block.id,
+        blockHandle: block,
     });
 
     f.signature.outs.forEach(function (elem, i) {
@@ -215,27 +225,71 @@ function createBlock(f) {
 
         jsPlumb.addEndpoint(block, { anchor: [0, pos, -1, 0] }, endpoint);
     });
+
+    return block;
 }
 
 
 function exportBlocks() {
-    var connections = jsPlumb.getAllConnections();
-    var exportObjects = map(objects, function (object) {
-        var $position = $("#" + object.id).position();
+    var connections = jsPlumb.getAllConnections().map((conn) => {
+        return {
+            sourceId: conn.sourceId,
+            targetId: conn.targetId,
+        };
+    });
+
+    var exportObjects = map((object) => {
+        var positionX = object.blockHandle.offsetLeft;
+        var positionY = object.blockHandle.offsetTop;
 
         // "object" represents logical layer
         // "block" part of it is the display/editor layer
-        object.block = {
-            position: { x: $position.left, y: $position.top },
-        };
+        return {
+            id: object.id,
+            fname: object.fname,
+            block: {
+                position: { x: positionX, y: positionY },
+            },
+        }
+    }, objects.values());
 
-        return object;
-    });
+    // Force evaluation of lazy computations for the serialization purpose
+    exportObjects = seq(exportObjects);
 
-    return {
+    return JSON.stringify({
         connections: connections,
         objects: exportObjects,
-    };
+    });
+}
+
+function importBlocks(data) {
+    data = JSON.parse(data);
+
+    objects = new Map();
+    $(".block").remove();
+    jsPlumb.reset();
+
+    forM(data.objects, (object) => {
+        var block = createBlock(object.fname, object.id);
+
+        // todo: get rid of jQ here
+        $(block).offset({
+            left: object.block.position.x,
+            top: object.block.position.y,
+        })
+    });
+
+    /*
+    for (var i = 0; i < data.connections.length; i++) {
+        var c = data.connections[i];
+        jsPlumb.connect({
+            sourceId: c.sourceId,
+            targetId: c.targetId,
+        });
+    }
+    */
+
+    jsPlumb.repaintEverything();
 }
 
 // Usercode
@@ -259,10 +313,10 @@ function toInt(str) {
 }
 toInt.signature = { ins: ["string"], outs: ["int"] };
 
-function toString(num) {
+function toStr(num) {
     return String(num);
 }
-toString.signature = { ins: ["int"], outs: ["string"] };
+toStr.signature = { ins: ["int"], outs: ["string"] };
 
 // more like "poke"
 function run(node, propagate) {
@@ -295,15 +349,17 @@ function registerFunction(f, name = "") {
 
     functions.insert(name, f);
 
-    $("body").append('<input type="button" onclick="createBlock(' + name + ')" value="' + name + '"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="createBlock(\'' + name + '\')" value="' + name + '"></input><br>');
 }
 
 $(function () {
     registerFunction(add);
     registerFunction(mul);
     registerFunction(toInt);
-    registerFunction(toString);
+    registerFunction(toStr);
 
+    $("#toolboxSidebar").append('<input type="button" onclick="localStorage[1] = exportBlocks()" value="export"></input><br>');
+    $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input><br>');
     /*createInputBlock();
     createBlock(add);
     createBlock(mul);
