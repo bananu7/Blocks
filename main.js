@@ -373,7 +373,7 @@ $(function () {
                 break;
             }
         }
-        if (sourceEndpointNum === -1) { 
+        if (endpointNum === -1) { 
             throw "Error in connecting; no such endpoint in the element"; 
         }
 
