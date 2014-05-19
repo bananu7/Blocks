@@ -55,6 +55,30 @@ function forM(xs, f) {
     mapM_(f, xs);
 }
 
+// performs automatic generator detection
+function* lazify(arr) {
+    if (arr.hasOwnProperty("next")) {
+        for (var x of arr) {
+            yield x;
+        }
+    } else {
+        for (var i = 0; i < arr.length; i++) {
+            yield arr[i];
+        }
+    }
+}
+
+// this has forced lazify because it's not using for..of
+function foldl1(f, xs) {
+    xs = lazify(xs);
+    var a = xs.next().value;
+    var b;
+    while(b = xs.next(), !b.done) {
+        a = f(a,b.value);
+    }
+    return a;
+}
+
 function* filter(pred, xs) {
     for (var x of xs) {
         if (!pred(x)) {
@@ -63,12 +87,6 @@ function* filter(pred, xs) {
         yield x;
     }
 }
-
-/*function* lazify(arr) {
-    for (var i = 0; i < arr.length; i++) {
-        yield arr[i];
-    }
-}*/
 
 function seq(lazy) {
     var result = [];
@@ -91,7 +109,11 @@ class Map {
         this._data = {};
     }
 
-    at (key) {
+    at (key, value) {
+        if (value !== undefined) {
+            this._data[key] = value;
+        }
+
         return this._data[key];
     }
 
@@ -267,7 +289,7 @@ function importBlocks(data) {
 
     objects = new Map();
     $(".block").remove();
-    jsPlumb.deleteEveryEndpoint();
+    jsPlumb.reset();
 
     forM(data.objects, (object) => {
         var block = createBlock(object.fname, object.id);
@@ -280,8 +302,6 @@ function importBlocks(data) {
     });
     num += data.objects.length;
 
-    console.log(data.connections);
-
     for (var i = 0; i < data.connections.length; i++) {
         var c = data.connections[i];
         var sourceEndpoint = objects.at(c.sourceId).outputEndpoints[c.sourceEndpointNum];
@@ -291,7 +311,82 @@ function importBlocks(data) {
     }
     connections = data.connections;
 
+    jsPlumbBindHandlers();
     jsPlumb.repaintEverything();
+}
+
+function codegenBlock(block) {
+    var code = "var process_" + block.id + " = function(input){\n" +
+                "    return " + block.fname + ".apply(null, input);\n" +
+                "}\n";
+    return code;
+}
+
+function topologicalSort() {
+    var blocksToDo = seq(map((block) => block.id, objects.values()));
+
+    var blockMarks = new Map();
+    mapM_((id) => blockMarks.insert(id, "white"), objects.keys());
+
+    var sortedBlocks = [];
+
+    function visit(blockId) {
+        if (blockMarks.at(blockId) === "gray") {
+            throw "The block graph is not a DAG (it contains disallowed cycles)";
+        }
+
+        if (blockMarks.at(blockId) === "white") {
+            blockMarks.at(blockId, "gray");
+            objects.at(blockId).outputEndpoints.forEach((endp) => {
+                endp.connections.forEach((connection) => {
+                    visit(connection.targetId);
+                });
+            });
+            blockMarks.at(blockId, "black");
+            sortedBlocks.push(objects.at(blockId));
+        }
+    }
+
+    while (blocksToDo.length > 0) {
+        var blockId = blocksToDo.pop();
+        visit(blockId);
+    }
+        
+    return sortedBlocks;
+}
+
+function codegenBlockRun(block) {
+    var code = "";
+
+    // find the input that is connected to that endpoint
+    block.inputEndpoints.forEach((endpoint, endpointNum) => {
+        // we can assume at most one connection is present in input endpoint
+        if (endpoint.connections.length < 1) 
+        //throw "All inputs must be connected!";
+            return;
+
+
+        // a pretty ugly hack to find:
+    // * the id of the source block
+        var sourceId = endpoint.connections[0].sourceId;
+        // * the endpoint number from which we want the value
+        var sourceEndpointNum = getEndpointNum(sourceId, endpoint.connections[0].endpoints[0], "output");
+        code += "input_" + block.id + "[" + endpointNum + "] = output_" + sourceId + "[" + sourceEndpointNum + "];\n"; 
+    });
+
+    code += "output_" + block.id + " = process_" + block.id + "(input_" + block.id + ");\n"
+    return code;
+}
+
+function compile() {
+    var code = "";
+
+    var concat = (a,b) => a+b;
+
+    code += foldl1(concat, map(codegenBlock, objects.values()));
+    code += foldl1(concat, map(codegenBlockRun, topologicalSort().reverse()));
+
+    return code;
 }
 
 // Usercode
@@ -354,34 +449,29 @@ function registerFunction(f, name = "") {
     $("#toolboxSidebar").append('<input type="button" onclick="createBlock(\'' + name + '\')" value="' + name + '"></input>');
 }
 
-$(function () {
-    jsPlumb.importDefaults({
-        EndpointHoverStyle : "cursor: pointer;",
-    });
-
-    function getEndpointNum(elementId, endpointObj, type) {
-        var endpointNum = -1;
-        var object = objects.at(elementId);
-        if (!object) {
-            throw "No such object";
-        }
-
-        var endpoints = (type === "input") ? object.inputEndpoints : object.outputEndpoints;
-        for (var i = 0; i < endpoints.length; i++) {
-            if (endpoints[i] === endpointObj) {
-                endpointNum = i;
-                break;
-            }
-        }
-        if (endpointNum === -1) { 
-            throw "Error in connecting; no such endpoint in the element"; 
-        }
-
-        return endpointNum;
+function getEndpointNum(elementId, endpointObj, type) {
+    var endpointNum = -1;
+    var object = objects.at(elementId);
+    if (!object) {
+        throw "No such object";
     }
 
-    jsPlumb.bind("connection", (info) => {
-        console.log(info);
+    var endpoints = (type === "input") ? object.inputEndpoints : object.outputEndpoints;
+    for (var i = 0; i < endpoints.length; i++) {
+        if (endpoints[i] === endpointObj) {
+            endpointNum = i;
+            break;
+        }
+    }
+    if (endpointNum === -1) { 
+        throw "Error in connecting; no such endpoint in the element"; 
+    }
+
+    return endpointNum;
+}
+
+var jsPlumbBindHandlers = function() {
+    function jsPlumbConnectionHandler(info) {
         var sourceEndpointNum = getEndpointNum(info.sourceId, info.sourceEndpoint, "output");
         var targetEndpointNum = getEndpointNum(info.targetId, info.targetEndpoint, "input")
 
@@ -391,11 +481,23 @@ $(function () {
             sourceEndpointNum: sourceEndpointNum,
             targetEndpointNum: targetEndpointNum
         });
+    }
+    function jsPlumbConnectionDetachedHandler(info) {
+    }
+
+    return function() {
+        jsPlumb.bind("connection", jsPlumbConnectionHandler);
+        jsPlumb.bind("connectionDetached", jsPlumbConnectionDetachedHandler);
+    }
+}();
+
+
+$(function () {
+    jsPlumb.importDefaults({
+        EndpointHoverStyle : "cursor: pointer;",
     });
 
-    jsPlumb.bind("connectionDetached", (info) => {
-
-    });
+    jsPlumbBindHandlers();
 
     registerFunction(add);
     registerFunction(mul);
