@@ -482,7 +482,26 @@ var jsPlumbBindHandlers = function() {
             targetEndpointNum: targetEndpointNum
         });
     }
+
     function jsPlumbConnectionDetachedHandler(info) {
+        var sourceEndpointNum = getEndpointNum(info.sourceId, info.sourceEndpoint, "output");
+        var targetEndpointNum = getEndpointNum(info.targetId, info.targetEndpoint, "input");
+
+        for (var i = 0; i < connections.length; i++) {
+            var c = connections[i];
+            if (c.sourceId === info.sourceId &&
+                c.targetId === info.targetId &&
+                c.sourceEndpointNum === sourceEndpointNum &&
+                c.targetEndpointNum === targetEndpointNum)
+            {
+                // if it's not the last element, put the last element in its place
+                if (i < connections.length - 1) { 
+                    connections[i] = connections[connections.length-1];
+                }
+                connections.pop();
+                break;
+            }
+        }
     }
 
     return function() {
