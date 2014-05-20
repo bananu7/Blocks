@@ -1,4 +1,7 @@
 
+import _ from "utils";
+import Map from "Map";
+
 var exampleDropOptions = {
     //tolerance: "touch",
     activeClass: "dragActive",
@@ -39,115 +42,6 @@ var print = function () {
     };
 }();
 
-function* map(f, xs) {
-    for (var x of xs) {
-        yield f(x);
-    }
-}
-
-function mapM_(f, xs) {
-    for (var x of xs) {
-        f(x);
-    }
-}
-
-function forM(xs, f) {
-    mapM_(f, xs);
-}
-
-// performs automatic generator detection
-function* lazify(arr) {
-    if (arr.hasOwnProperty("next")) {
-        for (var x of arr) {
-            yield x;
-        }
-    } else {
-        for (var i = 0; i < arr.length; i++) {
-            yield arr[i];
-        }
-    }
-}
-
-// this has forced lazify because it's not using for..of
-function foldl1(f, xs) {
-    xs = lazify(xs);
-    var a = xs.next().value;
-    var b;
-    while(b = xs.next(), !b.done) {
-        a = f(a,b.value);
-    }
-    return a;
-}
-
-function* filter(pred, xs) {
-    for (var x of xs) {
-        if (!pred(x)) {
-            continue;
-        }
-        yield x;
-    }
-}
-
-function seq(lazy) {
-    var result = [];
-
-    if (!lazy) {
-        return undefined;
-    }
-    
-    var next = lazy.next();
-    while (!next.done) {
-        result.push(next.value);
-        next = lazy.next();
-    }
-
-    return result;
-}
-
-class Map {
-    constructor() {
-        this._data = {};
-    }
-
-    at (key, value) {
-        if (value !== undefined) {
-            this._data[key] = value;
-        }
-
-        return this._data[key];
-    }
-
-    insert(key, value) {
-        if (this.at(key)) {
-            return false;
-        } else {
-            this._data[key] = value;
-            return true;
-        }
-    }
-
-    remove(key) {
-        this._data[key] = undefined;
-    }
-
-    *keys() {
-        for(var key in this._data) {
-            yield key;
-        }
-    }
-
-    *values() {
-        for(var key in this._data) {
-            yield this._data[key];
-        }
-    }
-
-    *pairs() {
-        for(var key in this._data) {
-            yield [key, this._data[key]];
-        }
-    }
-}
 
 
 var num = 1;
@@ -291,7 +185,7 @@ function importBlocks(data) {
     $(".block").remove();
     jsPlumb.reset();
 
-    forM(data.objects, (object) => {
+    _.forM(data.objects, (object) => {
         var block = createBlock(object.fname, object.id);
 
         // todo: get rid of jQ here
@@ -323,10 +217,10 @@ function codegenBlock(block) {
 }
 
 function topologicalSort() {
-    var blocksToDo = seq(map((block) => block.id, objects.values()));
+    var blocksToDo = _.seq(_.map((block) => block.id, objects.values()));
 
     var blockMarks = new Map();
-    mapM_((id) => blockMarks.insert(id, "white"), objects.keys());
+    _.mapM_((id) => blockMarks.insert(id, "white"), objects.keys());
 
     var sortedBlocks = [];
 
@@ -383,8 +277,8 @@ function compile() {
 
     var concat = (a,b) => a+b;
 
-    code += foldl1(concat, map(codegenBlock, objects.values()));
-    code += foldl1(concat, map(codegenBlockRun, topologicalSort().reverse()));
+    code += _.foldl1(concat, map(codegenBlock, objects.values()));
+    code += _.foldl1(concat, map(codegenBlockRun, topologicalSort().reverse()));
 
     return code;
 }
