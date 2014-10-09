@@ -196,6 +196,27 @@ window.importBlocks = function(data) {
     jsPlumb.repaintEverything();
 }
 
+// more like "poke"
+window.run = function(node, propagate) {
+    // todo: profile that vs select
+    var inputs = jsPlumb.getAllConnections().filter(function (conn) { return conn.target === node });
+    var inputValues = inputs.map(function (input) { return run(input.source, false); });
+
+    var outputValues = node.process.apply(null, inputValues);
+
+    if (node.type === "outputBlock") {
+        return;
+    }
+
+    if (propagate) {
+        var outputs = jsPlumb.select({ source: node.id });
+        outputs.each(function (output) { run(output.target, true); });
+    }
+    else {
+        return outputValues;
+    }
+}
+
 function getEndpointNum(elementId, endpointObj, type) {
     var endpointNum = -1;
     var object = objects.get(elementId);
@@ -315,6 +336,7 @@ $(function () {
     $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="createInput()" value="new input"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="createOutput()" value="new output"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="new output"></input>');
 
     createInput();
     /*createBlock("add");
