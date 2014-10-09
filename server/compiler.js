@@ -10,19 +10,9 @@ function duplicate(x) {
 }
 duplicate.signature = { ins: ["string"], outs: ["string"] };
 
-var test1 = {
-    objects: [
-        { kind: "input", id: 1, type: "string" },
-        { kind: "block", id: 2, fname: "duplicate" },
-        { kind: "output", id: 3, type: "string" }
-    ],
-    connections: [
-        { id: 1, sourceId: 1, sourceEndpoint: 1, targetId: 2, targetEndpoint: 1 },
-        { id: 2, sourceId: 2, sourceEndpoint: 1, targetId: 3, targetEndpoint: 1 }
-    ]
-};
 
-var test1Str = JSON.stringify(test1);
+var test = require('./tests/test2.js').test;
+var testStr = JSON.stringify(test);
 
 function topologicalSort(ast) {
     var blocksToDo = ast.objects.keys(); //ast.objects.values().map(function (block) { return block.id; });
@@ -135,8 +125,6 @@ function compile(astStr) {
     var ast = parseAst(astStr);
     var sortedBlocks = topologicalSort(ast).reverse();
 
-    console.log(sortedBlocks);
-
     var code = "";
     sortedBlocks.forEach(function (block) {
         code += codegen(ast, block.id);
@@ -164,7 +152,7 @@ function dumpError(err) {
 try {
     not_defined.function_call();
 } catch(err) {
-    var artifact = compile(test1Str);
+    var artifact = compile(testStr);
     console.log("Build succeded\n");
     console.log(artifact);
 }
