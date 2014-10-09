@@ -38,7 +38,11 @@ function createTypeEndpoint(type, isInput) {
     }
 }
 
-function createInput() {
+var print = function (text) {
+    console.log(text);
+}
+
+window.createInput = function () {
     var block = document.createElement('div');
     block.className = 'socket';
     block.id = "input" + num++;
@@ -58,25 +62,17 @@ function createInput() {
         return this.value;
     }.bind(input);
 
-    /*inputs.set(num, {
-        handle: block
-    });*/
-
-    /*objects.set(block.id, {
+    objects.set(block.id, {
         process: block.process,
         id: block.id,
         blockHandle: block,
-    });*/
+    });
 
     var endpoint = createTypeEndpoint("string", false);
     jsPlumb.addEndpoint(block, { anchor: [1, 0.5, 1, 0] }, endpoint);
 }
 
-var print = function (text) {
-    console.log(text);
-}
-
-function createOutput() {
+window.createOutput = function () {
     var block = document.createElement('div');
     block.className = 'socket';
     block.id = "output" + num++;
@@ -99,7 +95,7 @@ function createOutput() {
     jsPlumb.addEndpoint(block, { anchor: [0, 0.5, -1, 0] }, endpoint);
 }
 
-function createBlock(fname, id) {
+window.createBlock = function (fname, id) {
     id = id || "";
 
     var f = functions.get(fname);
@@ -147,7 +143,7 @@ function createBlock(fname, id) {
     return block;
 }
 
-function exportBlocks() {
+window.exportBlocks = function() {
     var exportObjects = objects.values().map(function (object) {
         var positionX = object.blockHandle.offsetLeft;
         var positionY = object.blockHandle.offsetTop;
@@ -163,16 +159,13 @@ function exportBlocks() {
         }
     });
 
-    // Force evaluation of lazy computations for the serialization purpose
-    exportObjects = seq(exportObjects);
-
     return JSON.stringify({
         connections: connections,
         objects: exportObjects,
     });
 }
 
-function importBlocks(data) {
+window.importBlocks = function(data) {
     data = JSON.parse(data);
 
     objects = new Map();
@@ -274,7 +267,10 @@ function registerFunction(f, name) {
 
     functions.set(name, f);
 
-    $("#toolboxSidebar").append('<input type="button" onclick="createBlock(\'' + name + '\')" value="' + name + '"></input>');
+    $('<input type="button">')
+        .on('click', function() { createBlock(name) })
+        .val(name)
+        .appendTo("#toolboxSidebar");
 }
 
 // Usercode
@@ -321,9 +317,9 @@ $(function () {
     $("#toolboxSidebar").append('<input type="button" onclick="createOutput()" value="new output"></input>');
 
     createInput();
-    createBlock("add");
+    /*createBlock("add");
     createBlock("mul");
     createBlock("toInt");
-    createBlock("toStr");
+    createBlock("toStr");*/
     createOutput();
 });
