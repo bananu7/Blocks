@@ -45,6 +45,34 @@ function topologicalSort(ast) {
 function parseAst(astStr) {
     var ast = JSON.parse(astStr);
 
+    /*
+    Here is the JSON annotation.
+    It's a comment, because this language doesn't really
+    allow me to express it as data
+
+    Type = "int" | "string" | ...
+
+    list of fns present in this compilation file [
+        {
+            name: String
+            objects: all of the blocks {
+                kind: "input" | "output" | "block",
+                id: Int,
+                if kind is "input" or "output"
+                    type: Type
+                else
+                    fname: String
+            }
+            connections: connections between the blocks {
+                id: Int, -- the connection id
+                sourceId: Int, targetId: Int, -- ids of source and target objets
+                sourceEndpoint: Int, -- number of endpoint to which the connection is connected
+                targetEndpoint: Int
+            }
+        }
+    ]
+    */
+
     var arrayToMap = function (arr) {
         var m = new Map;
         for (var i = 0; i < arr.length; i++) {
@@ -53,10 +81,18 @@ function parseAst(astStr) {
         return m;
     }
 
-    var objects = arrayToMap(ast.objects);
-    var connections = arrayToMap(ast.connections);
+    var fns = [];
+    ast.forEach(function(fn) {
+        var objects = arrayToMap(fn.objects);
+        var connections = arrayToMap(fn.connections);
+        fns.push({ 
+            name: fn.name,
+            objects: objects,
+            connections: connections
+        });
+    });
 
-    return { objects: objects, connections: connections };
+    return fns;
 }
 
 function codegenBlock(ast, blockId) {
@@ -104,24 +140,31 @@ function codegenOutput(ast, blockId) {
     return code;
 }
 
-function codegen(ast, objId) {
-    if (ast.objects.get(objId).kind === "block") 
-        return "// block\n" + codegenBlock(ast, objId);
-    else if (ast.objects.get(objId).kind === "input")
-        return "// input\n" + codegenInput(ast, objId);
-    else if (ast.objects.get(objId).kind === "output")
-        return "// output\n" + codegenOutput(ast, objId)
+function codegen(fn, objId) {
+    var obj = fn.objects.get(objId);
+    if (obj.kind === "block") 
+        return "// block\n" + codegenBlock(fn, objId);
+    else if (obj.kind === "input")
+        return "// input\n" + codegenInput(fn, objId);
+    else if (obj.kind === "output")
+        return "// output\n" + codegenOutput(fn, objId)
     else
         throw "Unknown block type";
 }
  
 function compile(astStr) {
     var ast = parseAst(astStr);
-    var sortedBlocks = topologicalSort(ast).reverse();
 
     var code = "";
-    sortedBlocks.forEach(function (block) {
-        code += codegen(ast, block.id);
+
+    ast.forEach(function(fn) {
+        code += "// BLOCK " + fn.name + "\n";
+
+        var sortedBlocks = topologicalSort(fn).reverse();
+
+        sortedBlocks.forEach(function (block) {
+            code += codegen(fn, block.id);
+        });
     });
 
     return code;
