@@ -5,7 +5,7 @@ var Map = require('collections/map.js');
 var http = require('http');
 var url = require('url');
 
-var test = require('./tests/test2.js').test;
+var test = require('./tests/test3.js').test;
 var testStr = JSON.stringify(test);
 
 function topologicalSort(ast) {
@@ -191,6 +191,7 @@ try {
     console.log("Build succeded\n");
     console.log(artifact);
 } catch(err) {
+    console.log(err);
     dumpError(err);
 }
 
