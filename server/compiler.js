@@ -5,12 +5,6 @@ var Map = require('collections/map.js');
 var http = require('http');
 var url = require('url');
 
-function duplicate(x) {
-    return x;
-}
-duplicate.signature = { ins: ["string"], outs: ["string"] };
-
-
 var test = require('./tests/test2.js').test;
 var testStr = JSON.stringify(test);
 
@@ -150,11 +144,11 @@ function dumpError(err) {
 }
 
 try {
-    not_defined.function_call();
-} catch(err) {
     var artifact = compile(testStr);
     console.log("Build succeded\n");
     console.log(artifact);
+} catch(err) {
+    dumpError(err);
 }
 
 /*
