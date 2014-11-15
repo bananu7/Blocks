@@ -2,9 +2,6 @@
 
 var Map = require('collections/map.js');
 
-var http = require('http');
-var url = require('url');
-
 var test = require('./tests/test3.js').test;
 var testStr = JSON.stringify(test);
 
@@ -194,20 +191,3 @@ try {
     console.log(err);
     dumpError(err);
 }
-
-/*
-http.createServer(function (request, response) {
-    if (request.method !== 'GET') {
-        response.writeHead(400, { 'Content-Type': 'text/plain' });
-        response.write("Use a GET request");
-        response.end();
-    }
-
-    var data = url.parse(request.url);
-    var artifact = compile(data);
-
-    response.writeHead(200, { 'Content-Type': 'text/javascript' });
-    response.write(artifact);
-    response.end();
-}).listen(9615);
-*/
