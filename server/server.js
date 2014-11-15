@@ -1,11 +1,15 @@
 var Hapi = require('hapi');
 var server = new Hapi.Server(3000);
+var Handlebars = require('handlebars')
 
 var fs = require('fs');
 
 var gamelibPath = 'gamelib/';
 
-function tag(name, attribs, contents) {
+var logic = require('./logic');
+
+function tag(name, attribs, contents) 
+{
     return '<' + name + ' ' + attribs + '>' + contents + '</' + name + '>';
 }
 function scriptTag(path) {
@@ -13,16 +17,15 @@ function scriptTag(path) {
 }
 
 function returnApp() {
-    var app = "<!doctype html>";
-
-    app += '<html>';
+    var gameScriptTemplate = Handlebars.compile("js/states/Level1.template.js");
+    var gameScript = gameScriptTemplate(logic);
 
     var scripts = ""
         + scriptTag("phaser.min.js")
         + scriptTag("js/states/Boot.js")
         + scriptTag("js/states/Preload.js")
         + scriptTag("js/states/MainMenu.js")
-        + scriptTag("js/states/Level1.js")
+        + scriptTag(gameScript)
     ;
 
     var head = ""
@@ -36,10 +39,18 @@ function returnApp() {
         + scriptTag("js/main.js")
     ;
 
-    app += tag('head', '', head);
-    app += tag('body', '', body);
+    var appTemplateSrc = 
+    '<!doctype html>\n'
+    +'<html>\n'
+    +'<head>\n{{{head}}}\n</head>\n'
+    +'<body>\n{{{body}}}\n</body>\n'
+    +'</html>';
 
-    app += '</html>';
+    var appTemplate = Handlebars.compile(appTemplateSrc);
+    var app = appTemplate({
+        head : head,
+        body : body
+    });
 
     return app;
 }
