@@ -120,11 +120,11 @@ Level1.prototype = {
         }
 
         if (this.cursors.right.isDown || this.dpad.right) {
-            this.player.body.velocity.x = WALKING_VELOCITY;
-            this.player.animations.play('walkRight');
+            ;
+            {{{keys.right}}}
+            ;
         } else if (this.cursors.left.isDown || this.dpad.left) {
-            this.player.body.velocity.x = -WALKING_VELOCITY;
-            this.player.animations.play('walkLeft');
+            {{{keys.left}}}
         } else {
             if (this.player.body.lastFacing === Phaser.LEFT) {
                 this.player.animations.play('faceLeft');
@@ -134,7 +134,7 @@ Level1.prototype = {
             this.player.body.velocity.x = 0;
         }
         if (this.cursors.up.isDown || this.padButtons.A) {
-            this.playerJump();
+            {{{keys.up}}}
         }
 
         this.updateTimer();

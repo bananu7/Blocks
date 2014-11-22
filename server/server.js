@@ -17,7 +17,9 @@ function scriptTag(path) {
 }
 
 function returnApp() {
-    var gameScriptTemplate = Handlebars.compile("js/states/Level1.template.js");
+
+    var gameScriptSrc = fs.readFileSync(gamelibPath + "js/states/Level1.template.js", {encoding: 'utf8'});
+    var gameScriptTemplate = Handlebars.compile(gameScriptSrc);
     var gameScript = gameScriptTemplate(logic);
 
     var scripts = ""
@@ -25,7 +27,7 @@ function returnApp() {
         + scriptTag("js/states/Boot.js")
         + scriptTag("js/states/Preload.js")
         + scriptTag("js/states/MainMenu.js")
-        + scriptTag(gameScript)
+        + tag('script', 'type="text/javascript"', gameScript)
     ;
 
     var head = ""

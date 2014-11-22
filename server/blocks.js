@@ -8,10 +8,20 @@ function getParams(blockString) {
 
 function ev(params, blockString) {
     var paramList = getParams(blockString);
+
+    paramList.forEach(function(param){
+        if (!params[param])
+            throw "A params object is incomplete for this template";
+    });
+
+    params.forEach(function(param) {
+
+    });
+
 }
 
 function combine(listOfBlocks) {
-
+    
 }
 
 
