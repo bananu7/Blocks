@@ -120,21 +120,14 @@ Level1.prototype = {
         }
 
         if (this.cursors.right.isDown || this.dpad.right) {
-            ;
-            {{{keys.right}}}
-            ;
+            {{{player.moveRight}}}
         } else if (this.cursors.left.isDown || this.dpad.left) {
-            {{{keys.left}}}
+            {{{player.moveLeft}}}
         } else {
-            if (this.player.body.lastFacing === Phaser.LEFT) {
-                this.player.animations.play('faceLeft');
-            } else {
-                this.player.animations.play('faceRight');
-            }
-            this.player.body.velocity.x = 0;
+            {{{player.notPressingKeys}}}
         }
         if (this.cursors.up.isDown || this.padButtons.A) {
-            {{{keys.up}}}
+            {{{player.jump}}}
         }
 
         this.updateTimer();
@@ -150,20 +143,17 @@ Level1.prototype = {
     },
 
     playerHitsBlock: function playerHitsBlock(player, obj) {
-        if (obj.body.touching.down) {
-            obj.destroy();
-        }
+        {{{playerHitsBlock}}}
     },
 
     playerHitsBonus: function playerHitsBonus(player, obj) {
         if (obj.body.touching.down) {
             switch (obj.what) {
-                case 'coin':
-                    this.addPlayerCoins();
+                {{#each playerHitsBonus}}
+                    case '{{@key}}':
+                        {{this}}
                     break;
-                case 'power':
-                    this.addPlayerPower(player, obj);
-                    break;
+                {{/each}}
             }
             obj.destroy();
         }
