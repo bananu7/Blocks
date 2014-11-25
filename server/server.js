@@ -1,6 +1,6 @@
 var Hapi = require('hapi');
 var server = new Hapi.Server(3000);
-var Handlebars = require('handlebars')
+var Handlebars = require('handlebars');
 
 var fs = require('fs');
 

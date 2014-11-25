@@ -1,4 +1,6 @@
 
+var Handlebars = require('handlebars')
+
 // blocks
 
 function getParams(blockString) {
@@ -6,18 +8,33 @@ function getParams(blockString) {
     return list.map(function(str) { return str.substring(2, str.length - 2); }
 }
 
-function ev(params, blockString) {
-    var paramList = getParams(blockString);
+function ev(block) {
+    var blockName = block.name;
+    var templateString = block.templateString;
+    var params = block.params;
 
+    var paramList = getParams(templateString);
+
+    if (paramList.length === 0) {
+        // it's just a string
+        return templateString;
+    }
+
+    // if it has any params, verify that they've been provided
     paramList.forEach(function(param){
         if (!params[param])
             throw "A params object is incomplete for this template";
     });
+    
+    var evaledParams = {};
 
-    params.forEach(function(param) {
+    for (var param in params) {
+        evaledParams[param.name] = ev(param);
+    }
 
-    });
+    var code = Handlebars.compile(templateString)(evaledParams);
 
+    return code;
 }
 
 function combine(listOfBlocks) {
