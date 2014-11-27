@@ -37,16 +37,35 @@ function ev(block) {
     return code;
 }
 
-function combine(listOfBlocks) {
-    
-}
+var predefinedBlocks = [
+    {
+        name: "increment",
+        templateString: "{{variable}} += {{value}};",
+        params: ["variable", "value"]
+    },
+    {
+        name: "set",
+        templateString: "{{variable}} = {{value}}",
+        params: ["variable", "value"]
+    },
+    {
+        name: "sequence",
+        templateString: "{{#each operations}}{{this}}{{/each}}",
+        params: [],
+        multiParams: ["operations"]
+    },
+    {
+        name: "ifthen",
+        templateString: "if ({{condition}}) { {{ operation }} }",
+        params: ["condition", "operation"]
+    },
+    {
+        name: "ifthenelse",
+        templateString: "if ({{condition}}) { {{ operation }} } else { {{ alternativeOperation }} }";
+        params: ["condition", "operation", "alternativeOperation"]
+    }
+];
 
-
-var constant = "{{value}}";
-var ifthen = "if ({{condition}}) { {{ block }} }";
-var ifthenelse = "if ({{condition}}) { {{ block }} } else { {{ elseblock }} }";
-var increment = "{{variable}} += {{value}};";
-var set = "{{variable}} = {{value}}";
 
 // some mario-specific tryouts
 var playPlayerAnimation = "this.player.animations.play({{animation}})";

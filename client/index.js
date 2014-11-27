@@ -2,145 +2,76 @@
 var Map = require('collections/map.js');
 var num = 1;
 var objects = new Map();
-var functions = new Map();
+var blockDefs = new Map();
 var connections = [];
 
-var exampleDropOptions = {
-    //tolerance: "touch",
-    activeClass: "dragActive",
+function createEndpointDef(isParam) {
+    var exampleDropOptions = {
+        //tolerance: "touch",
+        activeClass: "dragActive",
 
-    connector: ["Bezier", { curviness: 1 }],
-    endpoint: ["Dot", { radius: 11 }],
-};
+        connector: ["Bezier", { curviness: 1 }],
+        endpoint: ["Dot", { radius: 11 }],
+    };
 
-function getEndpointColorFromType(type) {
-    switch (type) {
-        case "int": return "#3399FF";
-        case "string": return "#FF9933";
-        default: return "#999999";
-    }
-}
-
-function createTypeEndpoint(type, isInput) {
-    var color = getEndpointColorFromType(type);
+    var color = (isParam ? "#999999" : "#cc9999");
 
     return {
         paintStyle: { fillStyle: color },
 
-        scope: type,
+        isSource: !isParam,
+        isTarget: isParam,
+
+        //scope: "all",
         connectorStyle: { strokeStyle: color, lineWidth: 6 },
 
         dropOptions: exampleDropOptions,
 
-        isSource: !isInput,
-        isTarget: isInput,
-        maxConnections: (isInput) ? 1 : -1,
-    }
+        maxConnections: (isParam ? 1 : -1),
+    };
 }
 
 var print = function (text) {
     console.log(text);
 }
 
-window.createInput = function () {
-    var block = document.createElement('div');
-    block.className = 'socket';
-    block.id = "input" + num++;
-    document.getElementById("inputSidebar").appendChild(block);
-
-    var input = document.createElement('input');
-    block.appendChild(input);
-
-    // this starts propagating change
-    input.addEventListener("change", function () {
-        //alert("running computations");
-        run(block, true);
-    }, false);
-    // this just passes current value (and is used by input.change)
-
-    block.process = function () {
-        return this.value;
-    }.bind(input);
-
-    objects.set(block.id, {
-        process: block.process,
-        id: block.id,
-        blockHandle: block,
-    });
-
-    var endpoint = createTypeEndpoint("string", false);
-    jsPlumb.addEndpoint(block, { anchor: [1, 0.5, 1, 0] }, endpoint);
-}
-
-window.createOutput = function () {
-    var block = document.createElement('div');
-    block.className = 'socket';
-    block.id = "output" + num++;
-    document.getElementById("outputSidebar").appendChild(block);
-
-    var input = document.createElement('input');
-    block.appendChild(input);
-
-    block.process = function (input) {
-        this.value = input;
-    }.bind(input);
-
-    /*objects.set(block.id,{
-        process: block.process,
-        id: block.id,
-        blockHandle: block,
-    });*/
-
-    var endpoint = createTypeEndpoint("string", true);
-    jsPlumb.addEndpoint(block, { anchor: [0, 0.5, -1, 0] }, endpoint);
-}
-
-window.createBlock = function (fname, id) {
+window.createBlock = function (blockName, id) {
     id = id || "";
-
-    var f = functions.get(fname);
     if (!id) id = String(num++)
 
-    var block = document.createElement('div');
-    block.className = 'block';
-    block.textContent = f.name;
-    block.id = id;
-    document.getElementById("content").appendChild(block);
+    var $block = document.createElement('div');
+    $block.className = 'block';
+    $block.textContent = blockName;
+    $block.id = id;
+    document.getElementById("content").appendChild($block);
 
-    jsPlumb.draggable(block);
+    jsPlumb.draggable($block);
 
-    block.process = f;
-
-    var outputEndpoints = [];
-    f.signature.outs.forEach(function (elem, i) {
+    var block = blockDefs.get(blockName);
+    var endpoints = [];
+    block.params.forEach(function (param, i) {
         // this formula leaves space before first and after last element
-        var pos = (1.0 / (f.signature.outs.length + 1)) * (i + 1);
-        var endpoint = createTypeEndpoint(elem, false);
+        var pos = (1.0 / (block.params.length + 1)) * (i + 1);
+        var endpoint = createEndpointDef(true);
 
-        var $endpoint = jsPlumb.addEndpoint(block, { anchor: [1, pos, 1, 0] }, endpoint)
-        outputEndpoints.push($endpoint);
+        var $endpoint = jsPlumb.addEndpoint($block, { anchor: [1, pos, 1, 0] }, endpoint)
+        endpoints.push($endpoint);
     });
 
-    var inputEndpoints = [];
-    f.signature.ins.forEach(function (elem, i) {
-        // this formula leaves space before first and after last element
-        var pos = (1.0 / (f.signature.ins.length + 1)) * (i + 1);
-        var endpoint = createTypeEndpoint(elem, true);
-
-        var $endpoint = jsPlumb.addEndpoint(block, { anchor: [0, pos, -1, 0] }, endpoint);
-        inputEndpoints.push($endpoint);
-    });
+    // Add source endpoint
+    var endpoint = createEndpointDef(false);
+    var $mainEndpoint = jsPlumb.addEndpoint($block, { anchor: [0.5, 1, 0, 1] }, endpoint)
+    endpoints.push($mainEndpoint);
 
     // todo: repetition
-    objects.set(block.id, {
-        fname: fname,
-        id: block.id,
-        blockHandle: block,
-        inputEndpoints: inputEndpoints,
-        outputEndpoints: outputEndpoints,
+    objects.set($block.id, {
+        blockName: blockName,
+        id: $block.id,
+        blockHandle: $block,
+        endpoints: endpoints,
     });
 
-    return block;
+    return $block;
 }
 
 window.exportBlocks = function() {
@@ -194,27 +125,6 @@ window.importBlocks = function(data) {
 
     jsPlumbBindHandlers();
     jsPlumb.repaintEverything();
-}
-
-// more like "poke"
-window.run = function(node, propagate) {
-    // todo: profile that vs select
-    var inputs = jsPlumb.getAllConnections().filter(function (conn) { return conn.target === node });
-    var inputValues = inputs.map(function (input) { return run(input.source, false); });
-
-    var outputValues = node.process.apply(null, inputValues);
-
-    if (node.type === "outputBlock") {
-        return;
-    }
-
-    if (propagate) {
-        var outputs = jsPlumb.select({ source: node.id });
-        outputs.each(function (output) { run(output.target, true); });
-    }
-    else {
-        return outputValues;
-    }
 }
 
 function getEndpointNum(elementId, endpointObj, type) {
@@ -277,48 +187,48 @@ var jsPlumbBindHandlers = function () {
     }
 }();
 
-function registerFunction(f, name) {
-    name = name || "";
-    if (!name) {
-        name = f.name;
+var predefinedBlocks = [
+    {
+        name: "increment",
+        templateString: "{{variable}} += {{value}};",
+        params: ["variable", "value"]
+    },
+    {
+        name: "set",
+        templateString: "{{variable}} = {{value}}",
+        params: ["variable", "value"]
+    },
+    {
+        name: "sequence",
+        templateString: "{{#each operations}}{{this}}{{/each}}",
+        params: [],
+        multiParams: ["operations"]
+    },
+    {
+        name: "ifthen",
+        templateString: "if ({{condition}}) { {{ operation }} }",
+        params: ["condition", "operation"]
+    },
+    {
+        name: "ifthenelse",
+        templateString: "if ({{condition}}) { {{ operation }} } else { {{ alternativeOperation }} }",
+        params: ["condition", "operation", "alternativeOperation"]
     }
-    if (!name) {
-        throw "You have to supply a function name for anonymous functions.";
-    }
+];
 
-    functions.set(name, f);
+function registerBlock(block) {
+    /*var getParams = function (templateString) {
+        var list = templateString.match(/{{[^}]*}}/g);
+        return list.map(function(str) { return str.substring(2, str.length - 2); }
+    };*/
+
+    blockDefs.set(block.name, block);
 
     $('<input type="button">')
-        .on('click', function() { createBlock(name) })
-        .val(name)
+        .on('click', function() { createBlock(block.name) })
+        .val(block.name)
         .appendTo("#toolboxSidebar");
 }
-
-// Usercode
-function add(x, y) {
-    return x + y;
-}
-add.signature = { ins: ["int", "int"], outs: ["int"] };
-
-function mul(x, y) {
-    return x * y;
-}
-mul.signature = { ins: ["int", "int"], outs: ["int"] };
-
-function toUpper(str) {
-    return str;
-}
-toUpper.signature = { ins: ["string"], outs: ["string"] };
-
-function toInt(str) {
-    return parseInt(str, 10);
-}
-toInt.signature = { ins: ["string"], outs: ["int"] };
-
-function toStr(num) {
-    return String(num);
-}
-toStr.signature = { ins: ["int"], outs: ["string"] };
 
 $(function () {
     jsPlumb.importDefaults({
@@ -327,21 +237,11 @@ $(function () {
 
     jsPlumbBindHandlers();
 
-    registerFunction(add);
-    registerFunction(mul);
-    registerFunction(toInt);
-    registerFunction(toStr);
-
     $("#toolboxSidebar").append('<input type="button" onclick="localStorage[1] = exportBlocks()" value="export"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input>');
-    $("#toolboxSidebar").append('<input type="button" onclick="createInput()" value="new input"></input>');
-    $("#toolboxSidebar").append('<input type="button" onclick="createOutput()" value="new output"></input>');
-    $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="new output"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="Send To Server"></input>');
 
-    createInput();
-    /*createBlock("add");
-    createBlock("mul");
-    createBlock("toInt");
-    createBlock("toStr");*/
-    createOutput();
+    predefinedBlocks.forEach(function(block) {
+        registerBlock(block);
+    });
 });
