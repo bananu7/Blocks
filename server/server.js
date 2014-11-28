@@ -1,5 +1,5 @@
 var Hapi = require('hapi');
-var server = new Hapi.Server(3000);
+var server = new Hapi.Server('localhost', 3000);
 var Handlebars = require('handlebars');
 
 var fs = require('fs');
@@ -8,7 +8,7 @@ var gamelibPath = 'gamelib/';
 
 var logic = require('./logic');
 
-function tag(name, attribs, contents) 
+function tag(name, attribs, contents)
 {
     return '<' + name + ' ' + attribs + '>' + contents + '</' + name + '>';
 }
@@ -41,7 +41,7 @@ function returnApp() {
         + scriptTag("js/main.js")
     ;
 
-    var appTemplateSrc = 
+    var appTemplateSrc =
     '<!doctype html>\n'
     +'<html>\n'
     +'<head>\n{{{head}}}\n</head>\n'
@@ -61,7 +61,7 @@ server.route({
     method: 'GET',
     path: '/',
     handler: function (request, reply) {
-        reply('Hello, world!');
+        reply('Hello, world!<br><a href="/app">Game</a>');
     }
 });
 
@@ -89,6 +89,42 @@ server.route({
         reply.file('data/tilemaps/' + request.params.name)
     }
 });
+
+server.route({
+    method: 'POST',
+    path: '/assets/player',
+    config: {
+        payload:{
+            output: 'stream',
+            parse: true,
+            allow: 'multipart/form-data'
+        },
+        handler: function (request, reply) {
+            var data = request.payload;
+            if (data.player_sprite) {
+                var name = data.player_sprite.hapi.filename;
+                var path = __dirname + "/data/images/player.png";
+                var file = fs.createWriteStream(path);
+
+                file.on('error', function (err) {
+                    console.error(err)
+                });
+
+                data.player_sprite.pipe(file);
+
+                data.player_sprite.on('end', function (err) {
+                    var ret = {
+                        filename: data.player_sprite.hapi.filename,
+                        headers: data.player_sprite.hapi.headers
+                    };
+                    reply(JSON.stringify(ret));
+                });
+            } else {
+                reply("No no");
+            }
+        }
+    }
+})
 
 server.start(function () {
     console.log('Server running at:', server.info.uri);
