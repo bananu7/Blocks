@@ -23,7 +23,7 @@ Preload.prototype = {
         this.load.spritesheet('buttonA', 'images/button-round-a.png', 96, 96);
         this.load.spritesheet('buttonB', 'images/button-round-b.png', 96, 96);
 
-        this.load.spritesheet('player', 'images/player.png', 16, 16);
+        this.load.spritesheet('player', 'images/player.png', 32, 32);
     },
 
     create: function create() {
