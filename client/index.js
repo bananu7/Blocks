@@ -101,7 +101,7 @@ window.exportBlocks = function() {
         // "block" part of it is the display/editor layer
         return {
             id: object.id,
-            fname: object.fname,
+            name: object.blockName,
             block: {
                 position: { x: positionX, y: positionY },
             },
@@ -134,8 +134,8 @@ window.importBlocks = function(data) {
 
     for (var i = 0; i < data.connections.length; i++) {
         var c = data.connections[i];
-        var sourceEndpoint = objects.get(c.sourceId).outputEndpoints[c.sourceEndpointNum];
-        var targetEndpoint = objects.get(c.targetId).inputEndpoints[c.targetEndpointNum];
+        var sourceEndpoint = objects.get(c.sourceId).outputEndpoints[c.sourceEndpointName];
+        var targetEndpoint = objects.get(c.targetId).inputEndpoints[c.targetEndpointName];
 
         jsPlumb.connect({ source: sourceEndpoint, target: targetEndpoint });
     }
@@ -146,7 +146,6 @@ window.importBlocks = function(data) {
 }
 
 function getEndpointName(elementId, endpointObj, type) {
-    var endpointNum = -1;
     var object = objects.get(elementId);
     if (!object) {
         throw "No such object";
@@ -157,18 +156,20 @@ function getEndpointName(elementId, endpointObj, type) {
         return "output";
     }
 
+    var endpointName = "";
+
     var endpoints = object.endpoints;
     for (var i = 0; i < endpoints.length; i++) {
         if (endpoints[i] === endpointObj) {
-            endpointNum = endpoints[i].name;
+            endpointName = endpoints[i].name;
             break;
         }
     }
-    if (endpointNum === -1) {
+    if (endpointName === "") {
         throw "Error in connecting; no such endpoint in the element";
     }
 
-    return endpointNum;
+    return endpointName;
 }
 
 var jsPlumbBindHandlers = function () {
@@ -256,6 +257,14 @@ function registerBlock(block) {
         .on('click', function() { createBlock(block.name) })
         .val(block.name)
         .appendTo("#toolboxSidebar");
+}
+
+window.sendDataToServer = function() {
+    var data = exportBlocks();
+
+    data.objects.forEach(function(object) {
+        object.block = undefined;
+    });
 }
 
 $(function () {

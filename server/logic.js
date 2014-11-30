@@ -33,8 +33,4 @@
     }
 }
 
-function build(lg) {
-
-}
-
 module.exports = logic;
