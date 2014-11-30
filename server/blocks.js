@@ -136,7 +136,6 @@ var test = [
             {id:"3", value: "true"},
             {id:"4", value: "true"},
             {id:"5", value: "console.log('test');"}
-
         ]
     }
 ];

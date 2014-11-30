@@ -35,6 +35,32 @@ var print = function (text) {
     console.log(text);
 }
 
+window.createRootBlock = function() {
+    var $block = document.createElement('div');
+    $block.className = 'block';
+    $block.textContent = "root";
+    $block.id = "root";
+    document.getElementById("content").appendChild($block);
+
+    jsPlumb.draggable($block);
+
+    var endpoints = [];
+    var pos = 0.5;
+    var endpointDef = createEndpointDef(true);
+    var $endpoint = jsPlumb.addEndpoint($block, { anchor: [1, pos, 1, 0] }, endpointDef);
+    $endpoint.name = "root";
+    endpoints.push($endpoint);
+
+    objects.set($block.id, {
+        blockName: "root",
+        id: $block.id,
+        blockHandle: $block,
+        endpoints: endpoints,
+    });
+
+    return $block;
+}
+
 window.createBlock = function (blockName, id) {
     id = id || "";
     if (!id) id = String(num++)
@@ -281,4 +307,6 @@ $(function () {
     predefinedBlocks.forEach(function(block) {
         registerBlock(block);
     });
+
+    createRootBlock();
 });
