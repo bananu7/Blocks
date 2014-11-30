@@ -1,9 +1,9 @@
 ﻿
-var Map = require('collections/map.js');
-var num = 1;
-var objects = new Map();
-var blockDefs = new Map();
-var connections = [];
+Map = require('collections/map.js');
+num = 1;
+objects = new Map();
+blockDefs = new Map();
+connections = [];
 
 function createEndpointDef(isParam) {
     var exampleDropOptions = {
@@ -49,18 +49,36 @@ window.createBlock = function (blockName, id) {
 
     var block = blockDefs.get(blockName);
     var endpoints = [];
-    block.params.forEach(function (param, i) {
+    var i = 0;
+
+    block.params.forEach(function (param) {
         // this formula leaves space before first and after last element
         var pos = (1.0 / (block.params.length + 1)) * (i + 1);
-        var endpoint = createEndpointDef(true);
+        var endpointDef = createEndpointDef(true);
 
-        var $endpoint = jsPlumb.addEndpoint($block, { anchor: [1, pos, 1, 0] }, endpoint)
+        var $endpoint = jsPlumb.addEndpoint($block, { anchor: [1, pos, 1, 0] }, endpointDef);
+        $endpoint.name = param;
         endpoints.push($endpoint);
+
+        i += 1;
     });
 
+    if (block.multiParams) {
+        block.multiParams.forEach(function(param) {
+            var pos = (1.0 / (block.params.length + 1)) * (i + 1);
+            var endpointDef = createEndpointDef(true);
+
+            var $endpoint = jsPlumb.addEndpoint($block, { anchor: [1, pos, 1, 0] }, endpointDef);
+            $endpoint.name = param;
+            endpoints.push($endpoint);
+
+            i += 1;
+        });
+    }
+
     // Add source endpoint
-    var endpoint = createEndpointDef(false);
-    var $mainEndpoint = jsPlumb.addEndpoint($block, { anchor: [0.5, 1, 0, 1] }, endpoint)
+    var endpointDef = createEndpointDef(false);
+    var $mainEndpoint = jsPlumb.addEndpoint($block, { anchor: [0.5, 1, 0, 1] }, endpointDef)
     endpoints.push($mainEndpoint);
 
     // todo: repetition
@@ -127,17 +145,22 @@ window.importBlocks = function(data) {
     jsPlumb.repaintEverything();
 }
 
-function getEndpointNum(elementId, endpointObj, type) {
+function getEndpointName(elementId, endpointObj, type) {
     var endpointNum = -1;
     var object = objects.get(elementId);
     if (!object) {
         throw "No such object";
     }
 
-    var endpoints = (type === "input") ? object.inputEndpoints : object.outputEndpoints;
+    // Assume that all blocks have just one output for now
+    if (type === "output") {
+        return "output";
+    }
+
+    var endpoints = object.endpoints;
     for (var i = 0; i < endpoints.length; i++) {
         if (endpoints[i] === endpointObj) {
-            endpointNum = i;
+            endpointNum = endpoints[i].name;
             break;
         }
     }
@@ -150,27 +173,27 @@ function getEndpointNum(elementId, endpointObj, type) {
 
 var jsPlumbBindHandlers = function () {
     function jsPlumbConnectionHandler(info) {
-        var sourceEndpointNum = getEndpointNum(info.sourceId, info.sourceEndpoint, "output");
-        var targetEndpointNum = getEndpointNum(info.targetId, info.targetEndpoint, "input")
+        var sourceEndpointName = getEndpointName(info.sourceId, info.sourceEndpoint, "output");
+        var targetEndpointName = getEndpointName(info.targetId, info.targetEndpoint, "input")
 
         connections.push({
             sourceId: info.sourceId,
             targetId: info.targetId,
-            sourceEndpointNum: sourceEndpointNum,
-            targetEndpointNum: targetEndpointNum
+            sourceEndpointName: sourceEndpointName,
+            targetEndpointName: targetEndpointName
         });
     }
 
     function jsPlumbConnectionDetachedHandler(info) {
-        var sourceEndpointNum = getEndpointNum(info.sourceId, info.sourceEndpoint, "output");
-        var targetEndpointNum = getEndpointNum(info.targetId, info.targetEndpoint, "input");
+        var sourceEndpointName = getEndpointName(info.sourceId, info.sourceEndpoint, "output");
+        var targetEndpointName = getEndpointName(info.targetId, info.targetEndpoint, "input");
 
         for (var i = 0; i < connections.length; i++) {
             var c = connections[i];
             if (c.sourceId === info.sourceId &&
                 c.targetId === info.targetId &&
-                c.sourceEndpointNum === sourceEndpointNum &&
-                c.targetEndpointNum === targetEndpointNum) {
+                c.sourceEndpointName === sourceEndpointName &&
+                c.targetEndpointName === targetEndpointName) {
                 // if it's not the last element, put the last element in its place
                 if (i < connections.length - 1) {
                     connections[i] = connections[connections.length - 1];
@@ -188,6 +211,11 @@ var jsPlumbBindHandlers = function () {
 }();
 
 var predefinedBlocks = [
+    {   
+        name: "constant",
+        templateString: "{{constant}}",
+        params: []
+    },
     {
         name: "increment",
         templateString: "{{variable}} += {{value}};",
