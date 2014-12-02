@@ -175,7 +175,7 @@ window.exportBlocks = function() {
     });
 
     return {
-        name: 'testunitname',
+        name: 'playerjump',
         connections: connections,
         objects: exportObjects,
     };

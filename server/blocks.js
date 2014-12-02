@@ -197,17 +197,19 @@ function deserializeToBlocks(jsonData) {
 
 function build(jsonData) {
     var blocks = deserializeToBlocks(jsonData);
+
+    var result = {};
+
     blocks.forEach(function(block) {
-        block.code = ev(block.code);
+        result[block.name] = ev(block.code);
     });
 
-    return blocks;
+    return result;
 }
 
 //var built = build(test);
 //console.log("\n\n\n--------------------------------------\n")
 //console.log(built);
-
 
 module.exports = {
     build: build,

@@ -26,6 +26,11 @@ function returnApp() {
 
     var gameScriptSrc = fs.readFileSync(gamelibPath + "js/states/Level1.template.js", {encoding: 'utf8'});
     var gameScriptTemplate = Handlebars.compile(gameScriptSrc);
+
+    //TEMP HACK
+    console.log(server.app.lastResult);
+    logic.player.jump = server.app.lastResult.playerjump;
+    console.log(logic);
     var gameScript = gameScriptTemplate(logic);
 
     var scripts = ""
@@ -96,36 +101,6 @@ server.route({
     }
 });
 
-
-var test = [
-    {
-        name: "playerWhateverHandler",
-        connections:[
-            {sourceId: "2", targetId:"1", targetEndpointName:"operation"},
-            {sourceId: "1", targetId:"root", targetEndpointName:"root"},
-
-            {sourceId: "3", targetId:"1", targetEndpointName:"condition"},
-            {sourceId: "4", targetId:"2", targetEndpointName:"condition"},
-            {sourceId: "5", targetId:"2", targetEndpointName:"operation"},
-        ],
-        objects:[
-            {id:"1",name:"ifthen"},
-            {id:"2", name:"ifthen"},
-            {id:"root", name:"root"},
-            {id:"3", value: "true"},
-            {id:"4", value: "true"},
-            {id:"5", value: "console.log('test');"}
-        ]
-    }
-];
-server.route({
-    method: 'GET',
-    path: '/blocks',
-    handler: function(request, reply) {
-        reply(blocks.build(test));
-    }
-})
-
 server.route({
     method: 'POST',
     path: '/blocks',
@@ -141,6 +116,10 @@ server.route({
             result = 'Build error: ' + e;
             console.log(result);
         }
+
+        // store last result into a server variable
+        console.log('storing new result');
+        server.app.lastResult = result;
 
         reply(result);
     }
