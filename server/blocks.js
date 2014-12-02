@@ -84,8 +84,8 @@ var predefinedBlocks = [
 
 
 function ev(block) {
-    console.log("block");
-    console.log(block);
+    //console.log("block");
+    //console.log(block);
 
     // if it's just a string, return it
     if (block.value) 
@@ -159,8 +159,8 @@ function deserializeToBlocks(jsonData) {
         var expandObject = function(obj) {
             var conns = connections.filter(function(conn) { return conn.targetId === obj.id; });
 
-            console.log("mathing connections");
-            console.log(conns);
+            //console.log("mathing connections");
+            //console.log(conns);
 
             // if it's a constant, return it
             if (obj.value) {
@@ -189,8 +189,8 @@ function deserializeToBlocks(jsonData) {
 
     var blocks = data.map(deserializeBlock);
 
-    console.log("blocks");
-    console.log(blocks);
+    //console.log("blocks");
+    //console.log(blocks);
 
     return blocks;
 }
@@ -204,7 +204,11 @@ function build(jsonData) {
     return blocks;
 }
 
-var built = build(test);
-console.log("\n\n\n--------------------------------------\n")
-console.log(built);
+//var built = build(test);
+//console.log("\n\n\n--------------------------------------\n")
+//console.log(built);
 
+
+module.exports = {
+    build: build,
+};

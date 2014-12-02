@@ -174,10 +174,11 @@ window.exportBlocks = function() {
         return serializedBlock;
     });
 
-    return JSON.stringify({
+    return {
+        name: 'testunitname',
         connections: connections,
         objects: exportObjects,
-    });
+    };
 }
 
 window.importBlocks = function(data) {
@@ -320,11 +321,18 @@ function registerBlock(block) {
         .appendTo("#toolboxSidebar");
 }
 
-window.sendDataToServer = function() {
+window.result = "";
+window.sendToServer = function() {
     var data = exportBlocks();
 
-    data.objects.forEach(function(object) {
-        object.block = undefined;
+    $.ajax({ 
+        type: "POST",
+        url: "http://localhost:3000/blocks",
+        data: exportBlocks()
+    })
+    .done(function(d){
+        console.log("Build complete");
+        window.result = d;
     });
 }
 

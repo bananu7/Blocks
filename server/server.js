@@ -1,12 +1,18 @@
 var Hapi = require('hapi');
-var server = new Hapi.Server('localhost', 3000);
-var Handlebars = require('handlebars');
+var serverConfig = {
+    cors: {
+        origin: ["*"]
+    }
+};
+var server = new Hapi.Server('localhost', 3000, serverConfig);
 
+var Handlebars = require('handlebars');
 var fs = require('fs');
 
 var gamelibPath = 'gamelib/';
 
 var logic = require('./logic');
+var blocks = require('./blocks');
 
 function tag(name, attribs, contents)
 {
@@ -89,6 +95,57 @@ server.route({
         reply.file('data/tilemaps/' + request.params.name)
     }
 });
+
+
+var test = [
+    {
+        name: "playerWhateverHandler",
+        connections:[
+            {sourceId: "2", targetId:"1", targetEndpointName:"operation"},
+            {sourceId: "1", targetId:"root", targetEndpointName:"root"},
+
+            {sourceId: "3", targetId:"1", targetEndpointName:"condition"},
+            {sourceId: "4", targetId:"2", targetEndpointName:"condition"},
+            {sourceId: "5", targetId:"2", targetEndpointName:"operation"},
+        ],
+        objects:[
+            {id:"1",name:"ifthen"},
+            {id:"2", name:"ifthen"},
+            {id:"root", name:"root"},
+            {id:"3", value: "true"},
+            {id:"4", value: "true"},
+            {id:"5", value: "console.log('test');"}
+        ]
+    }
+];
+server.route({
+    method: 'GET',
+    path: '/blocks',
+    handler: function(request, reply) {
+        reply(blocks.build(test));
+    }
+})
+
+server.route({
+    method: 'POST',
+    path: '/blocks',
+    handler: function(request, reply) {
+        //console.log(request.payload);
+
+        var data = [request.payload];
+
+        var result;
+        try {
+            result = blocks.build(data);
+        } catch(e) {
+            result = 'Build error: ' + e;
+            console.log(result);
+        }
+
+        reply(result);
+    }
+})
+
 
 server.route({
     method: 'POST',
