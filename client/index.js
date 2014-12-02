@@ -61,6 +61,37 @@ window.createRootBlock = function() {
     return $block;
 }
 
+window.createConstantBlock = function() {
+    var id = String(num++);
+    var $block = document.createElement('div');
+    $block.className = 'block';
+    $block.textContent = "root";
+    $block.id = id;
+
+    var $textbox = document.createElement('input');
+    $textbox.type = 'text';
+    $block.appendChild($textbox);
+    document.getElementById("content").appendChild($block);
+
+    jsPlumb.draggable($block);
+
+    var endpoints = [];
+    var pos = 0.5;
+    var endpointDef = createEndpointDef(true);
+    var $endpoint = jsPlumb.addEndpoint($block, { anchor: [1, pos, 1, 0] }, endpointDef);
+    $endpoint.name = "root";
+    endpoints.push($endpoint);
+
+    objects.set($block.id, {
+        blockName: "root",
+        id: $block.id,
+        blockHandle: $block,
+        endpoints: endpoints,
+    });
+
+    return $block;
+}
+
 window.createBlock = function (blockName, id) {
     id = id || "";
     if (!id) id = String(num++)
@@ -238,11 +269,6 @@ var jsPlumbBindHandlers = function () {
 }();
 
 var predefinedBlocks = [
-    {   
-        name: "constant",
-        templateString: "{{constant}}",
-        params: []
-    },
     {
         name: "increment",
         templateString: "{{variable}} += {{value}};",
@@ -303,6 +329,7 @@ $(function () {
     $("#toolboxSidebar").append('<input type="button" onclick="localStorage[1] = exportBlocks()" value="export"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="Send To Server"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="createConstantBlock()" value="Constant"></input>');
 
     predefinedBlocks.forEach(function(block) {
         registerBlock(block);
