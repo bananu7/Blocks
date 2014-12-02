@@ -65,11 +65,12 @@ window.createConstantBlock = function() {
     var id = String(num++);
     var $block = document.createElement('div');
     $block.className = 'block';
-    $block.textContent = "root";
+    $block.textContent = "";
     $block.id = id;
 
     var $textbox = document.createElement('input');
     $textbox.type = 'text';
+    $textbox.id = 'constant_' + id;
     $block.appendChild($textbox);
     document.getElementById("content").appendChild($block);
 
@@ -77,13 +78,12 @@ window.createConstantBlock = function() {
 
     var endpoints = [];
     var pos = 0.5;
-    var endpointDef = createEndpointDef(true);
-    var $endpoint = jsPlumb.addEndpoint($block, { anchor: [1, pos, 1, 0] }, endpointDef);
-    $endpoint.name = "root";
+    var endpointDef = createEndpointDef(false);
+    var $endpoint = jsPlumb.addEndpoint($block, { anchor: [0.5, 1, 0, 1] }, endpointDef);
+    $endpoint.name = "output";
     endpoints.push($endpoint);
 
     objects.set($block.id, {
-        blockName: "root",
         id: $block.id,
         blockHandle: $block,
         endpoints: endpoints,
@@ -156,13 +156,22 @@ window.exportBlocks = function() {
 
         // "object" represents logical layer
         // "block" part of it is the display/editor layer
-        return {
+
+        var serializedBlock = {
             id: object.id,
-            name: object.blockName,
             block: {
                 position: { x: positionX, y: positionY },
             },
+        };
+
+        if (object.blockName) {
+            serializedBlock.name = object.blockName;
+        } else {
+            var $textbox = document.getElementById('constant_' + object.id);
+            serializedBlock.value = $textbox.value;
         }
+
+        return serializedBlock;
     });
 
     return JSON.stringify({
