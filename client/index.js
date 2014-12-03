@@ -56,12 +56,43 @@ window.createRootBlock = function() {
         id: $block.id,
         blockHandle: $block,
         endpoints: endpoints,
+        type: 'root',
     });
 
     return $block;
 }
 
-window.createConstantBlock = function() {
+window.createConstantBlock = function(value, name) {
+    name = name || value;
+
+    var id = String(num++);
+    var $block = document.createElement('div');
+    $block.className = 'block';
+    $block.textContent = name;
+    $block.id = id;
+    document.getElementById("content").appendChild($block);
+
+    jsPlumb.draggable($block);
+
+    var endpoints = [];
+    var pos = 0.5;
+    var endpointDef = createEndpointDef(false);
+    var $endpoint = jsPlumb.addEndpoint($block, { anchor: [0.5, 1, 0, 1] }, endpointDef);
+    $endpoint.name = "output";
+    endpoints.push($endpoint);
+
+    objects.set($block.id, {
+        id: $block.id,
+        value: value,
+        blockHandle: $block,
+        endpoints: endpoints,
+        type: 'constant',
+    });
+
+    return $block;
+}
+
+window.createParameterBlock = function() {
     var id = String(num++);
     var $block = document.createElement('div');
     $block.className = 'block';
@@ -70,7 +101,7 @@ window.createConstantBlock = function() {
 
     var $textbox = document.createElement('input');
     $textbox.type = 'text';
-    $textbox.id = 'constant_' + id;
+    $textbox.id = 'parameter_' + id;
     $block.appendChild($textbox);
     document.getElementById("content").appendChild($block);
 
@@ -87,6 +118,7 @@ window.createConstantBlock = function() {
         id: $block.id,
         blockHandle: $block,
         endpoints: endpoints,
+        type: 'parameter',
     });
 
     return $block;
@@ -144,6 +176,7 @@ window.createBlock = function (blockName, id) {
         id: $block.id,
         blockHandle: $block,
         endpoints: endpoints,
+        type: 'block',
     });
 
     return $block;
@@ -164,11 +197,22 @@ window.exportBlocks = function() {
             },
         };
 
-        if (object.blockName) {
+        switch (object.type) {
+        case 'root':
+            serializedBlock.name = 'root';
+            break;
+        case 'block':
             serializedBlock.name = object.blockName;
-        } else {
-            var $textbox = document.getElementById('constant_' + object.id);
+            break;
+        case 'parameter':
+            var $textbox = document.getElementById('parameter_' + object.id);
             serializedBlock.value = $textbox.value;
+            break;
+        case 'constant':
+            serializedBlock.value = object.value;
+            break;
+        default:
+            throw "Unknown block type";
         }
 
         return serializedBlock;
@@ -281,28 +325,27 @@ var jsPlumbBindHandlers = function () {
 var predefinedBlocks = [
     {
         name: "increment",
-        templateString: "{{variable}} += {{value}};",
+        params: ["variable", "value"]
+    },
+    {
+        name: "subtract",
         params: ["variable", "value"]
     },
     {
         name: "set",
-        templateString: "{{variable}} = {{value}}",
         params: ["variable", "value"]
     },
     {
         name: "sequence",
-        templateString: "{{#each operations}}{{this}}{{/each}}",
         params: [],
         multiParams: ["operations"]
     },
     {
         name: "ifthen",
-        templateString: "if ({{condition}}) { {{ operation }} }",
         params: ["condition", "operation"]
     },
     {
         name: "ifthenelse",
-        templateString: "if ({{condition}}) { {{ operation }} } else { {{ alternativeOperation }} }",
         params: ["condition", "operation", "alternativeOperation"]
     }
 ];
@@ -318,6 +361,15 @@ function registerBlock(block) {
     $('<input type="button">')
         .on('click', function() { createBlock(block.name) })
         .val(block.name)
+        .appendTo("#toolboxSidebar");
+}
+
+window.registerConstant = function(value, name) {
+    name = name || value;
+
+    $('<input type="button">')
+        .on('click', function() { createConstantBlock(value, name); })
+        .val(name)
         .appendTo("#toolboxSidebar");
 }
 
@@ -346,7 +398,13 @@ $(function () {
     $("#toolboxSidebar").append('<input type="button" onclick="localStorage[1] = exportBlocks()" value="export"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="Send To Server"></input>');
-    $("#toolboxSidebar").append('<input type="button" onclick="createConstantBlock()" value="Constant"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="createParameterBlock()" value="Constant"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="createParameterBlock()" value="Constant"></input>');
+
+    registerConstant('JUMP_VELOCITY', 'player jump velocity');
+    registerConstant('this.player.body.touching.down || this.player.body.blocked.down', 'player jump not blocked');
+    registerConstant('this.player.body.velocity.y', 'player vel Y');
+    registerConstant('this.player.body.velocity.x', 'player vel X');
 
     predefinedBlocks.forEach(function(block) {
         registerBlock(block);

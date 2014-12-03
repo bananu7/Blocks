@@ -18,7 +18,8 @@ div.block {
             
     text-align: center;
     vertical-align: middle;
-    font-size: 3em;
+    font-size: 2em;
+    font-family: Helvetica;
             
     position:absolute;
 }

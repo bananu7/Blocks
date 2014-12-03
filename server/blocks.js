@@ -48,6 +48,11 @@ var predefinedBlocks = [
         params: ["variable", "value"]
     },
     {
+        name: "subtract",
+        templateString: "{{variable}} -= {{value}};",
+        params: ["variable", "value"]
+    },
+    {
         name: "set",
         templateString: "{{variable}} = {{value}}",
         params: ["variable", "value"]
