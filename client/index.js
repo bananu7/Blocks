@@ -292,7 +292,7 @@ window.importBlocks = function(data) {
             top: object.block.position.y,
         })
     });
-    num += data.objects.length;
+    num = data.objects.length;
 
     for (var i = 0; i < data.connections.length; i++) {
         var c = data.connections[i];
