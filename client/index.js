@@ -58,14 +58,48 @@ var print = function (text) {
     console.log(text);
 }
 
-window.createRootBlock = function() {
+window.createBlockBase = function(displayLabel, id) {
+    if (!id) id = String(num++)
     var $block = document.createElement('div');
     $block.className = 'block';
-    $block.textContent = "root";
-    $block.id = "root";
+    $block.id = id;
+
     document.getElementById("content").appendChild($block);
 
+    var $closeButton = document.createElement('div');
+    $closeButton.className = "closeButton";
+    $closeButton.addEventListener("click", function() {
+        // remove all endpoints
+        objects.get(this.id).endpoints.forEach(function(endp) {
+            jsPlumb.deleteEndpoint(endp);
+        });
+
+        // remove all the connections from and to it
+        jsPlumb.detachAllConnections(this, {fireEvent:false});
+        connections.forEach(function(c) {
+            if (c.sourceId === this.id || c.targetId === this.id) 
+                delete c;
+        });
+
+        // Unlink it from DOM
+        this.parentElement.removeChild(this);
+
+        // remove the object from the table
+        objects.delete(this.id);
+    }.bind($block));
+    $block.appendChild($closeButton);
+
+    var $label = document.createElement('span');
+    $label.innerText = displayLabel;
+    $block.appendChild($label);
+
     jsPlumb.draggable($block);
+
+    return $block;
+}
+
+window.createRootBlock = function() {
+    var $block = createBlockBase('root', 'root');
 
     var endpoints = [];
     var pos = 0.5;
@@ -88,14 +122,7 @@ window.createRootBlock = function() {
 window.createConstantBlock = function(value, name) {
     name = name || value;
 
-    var id = String(num++);
-    var $block = document.createElement('div');
-    $block.className = 'block';
-    $block.textContent = name;
-    $block.id = id;
-    document.getElementById("content").appendChild($block);
-
-    jsPlumb.draggable($block);
+    var $block = createBlockBase(name);
 
     var endpoints = [];
     var pos = 0.5;
@@ -116,19 +143,12 @@ window.createConstantBlock = function(value, name) {
 }
 
 window.createParameterBlock = function() {
-    var id = String(num++);
-    var $block = document.createElement('div');
-    $block.className = 'block';
-    $block.textContent = "";
-    $block.id = id;
+    var $block = createBlockBase("");
 
     var $textbox = document.createElement('input');
     $textbox.type = 'text';
-    $textbox.id = 'parameter_' + id;
+    $textbox.id = 'parameter_' + $block.id;
     $block.appendChild($textbox);
-    document.getElementById("content").appendChild($block);
-
-    jsPlumb.draggable($block);
 
     var endpoints = [];
     var pos = 0.5;
@@ -148,17 +168,7 @@ window.createParameterBlock = function() {
 }
 
 window.createBlock = function (blockName, id) {
-    id = id || "";
-    if (!id) id = String(num++)
-
-    var $block = document.createElement('div');
-    $block.className = 'block';
-    $block.textContent = blockName;
-    $block.id = id;
-    document.getElementById("content").appendChild($block);
-
-    jsPlumb.draggable($block);
-
+    var $block = createBlockBase(blockName, id);
     var block = blockDefs.get(blockName);
 
     if(!block) 
@@ -272,7 +282,8 @@ window.importBlocks = function(data) {
             $block = createParameterBlock();
             break;
         case 'constant':
-            $block = createConstantBlock();
+            $block = createConstantBlock(object.value);
+            break;
         }
 
         // todo: get rid of jQ here
