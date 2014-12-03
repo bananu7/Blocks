@@ -1,9 +1,32 @@
 ﻿
 Map = require('collections/map.js');
 num = 1;
-objects = new Map();
+
 blockDefs = new Map();
+objects = new Map();
 connections = [];
+unitName = "playerjump";
+
+ Array.prototype.find = function(predicate) {
+    if (this == null) {
+        throw new TypeError('Array.prototype.find called on null or undefined');
+    }
+    if (typeof predicate !== 'function') {
+        throw new TypeError('predicate must be a function');
+    }
+    var list = Object(this);
+    var length = list.length >>> 0;
+    var thisArg = arguments[1];
+    var value;
+
+    for (var i = 0; i < length; i++) {
+        value = list[i];
+        if (predicate.call(thisArg, value, i, list)) {
+            return value;
+        } 
+    }
+    return undefined;
+};
 
 function createEndpointDef(isParam) {
     var exampleDropOptions = {
@@ -48,7 +71,7 @@ window.createRootBlock = function() {
     var pos = 0.5;
     var endpointDef = createEndpointDef(true);
     var $endpoint = jsPlumb.addEndpoint($block, { anchor: [1, pos, 1, 0] }, endpointDef);
-    $endpoint.name = "root";
+    $endpoint.endpointName = "root";
     endpoints.push($endpoint);
 
     objects.set($block.id, {
@@ -78,7 +101,7 @@ window.createConstantBlock = function(value, name) {
     var pos = 0.5;
     var endpointDef = createEndpointDef(false);
     var $endpoint = jsPlumb.addEndpoint($block, { anchor: [0.5, 1, 0, 1] }, endpointDef);
-    $endpoint.name = "output";
+    $endpoint.endpointName = "output";
     endpoints.push($endpoint);
 
     objects.set($block.id, {
@@ -111,7 +134,7 @@ window.createParameterBlock = function() {
     var pos = 0.5;
     var endpointDef = createEndpointDef(false);
     var $endpoint = jsPlumb.addEndpoint($block, { anchor: [0.5, 1, 0, 1] }, endpointDef);
-    $endpoint.name = "output";
+    $endpoint.endpointName = "output";
     endpoints.push($endpoint);
 
     objects.set($block.id, {
@@ -137,6 +160,10 @@ window.createBlock = function (blockName, id) {
     jsPlumb.draggable($block);
 
     var block = blockDefs.get(blockName);
+
+    if(!block) 
+        throw "No block named " + blockName + " found in the library!";
+
     var endpoints = [];
     var i = 0;
 
@@ -146,7 +173,7 @@ window.createBlock = function (blockName, id) {
         var endpointDef = createEndpointDef(true);
 
         var $endpoint = jsPlumb.addEndpoint($block, { anchor: [1, pos, 1, 0] }, endpointDef);
-        $endpoint.name = param;
+        $endpoint.endpointName = param;
         endpoints.push($endpoint);
 
         i += 1;
@@ -158,17 +185,18 @@ window.createBlock = function (blockName, id) {
             var endpointDef = createEndpointDef(true);
 
             var $endpoint = jsPlumb.addEndpoint($block, { anchor: [1, pos, 1, 0] }, endpointDef);
-            $endpoint.name = param;
+            $endpoint.endpointName = param;
             endpoints.push($endpoint);
 
             i += 1;
         });
     }
 
-    // Add source endpoint
+    // Add output endpoint
     var endpointDef = createEndpointDef(false);
-    var $mainEndpoint = jsPlumb.addEndpoint($block, { anchor: [0.5, 1, 0, 1] }, endpointDef)
-    endpoints.push($mainEndpoint);
+    var $outputEndpoint = jsPlumb.addEndpoint($block, { anchor: [0.5, 1, 0, 1] }, endpointDef)
+    $outputEndpoint.endpointName = "output";
+    endpoints.push($outputEndpoint);
 
     // todo: repetition
     objects.set($block.id, {
@@ -195,6 +223,7 @@ window.exportBlocks = function() {
             block: {
                 position: { x: positionX, y: positionY },
             },
+            type: object.type,
         };
 
         switch (object.type) {
@@ -219,24 +248,35 @@ window.exportBlocks = function() {
     });
 
     return {
-        name: 'playerjump',
+        name: unitName,
         connections: connections,
         objects: exportObjects,
     };
 }
 
 window.importBlocks = function(data) {
-    data = JSON.parse(data);
-
     objects = new Map();
     $(".block").remove();
     jsPlumb.reset();
 
     data.objects.forEach(function (object) {
-        var block = createBlock(object.fname, object.id);
+        var $block;
+        switch (object.type) {
+        case 'root':
+            $block = createRootBlock();
+            break;
+        case 'block':
+            $block = createBlock(object.name, object.id);
+            break;
+        case 'parameter':
+            $block = createParameterBlock();
+            break;
+        case 'constant':
+            $block = createConstantBlock();
+        }
 
         // todo: get rid of jQ here
-        $(block).offset({
+        $($block).offset({
             left: object.block.position.x,
             top: object.block.position.y,
         })
@@ -245,8 +285,8 @@ window.importBlocks = function(data) {
 
     for (var i = 0; i < data.connections.length; i++) {
         var c = data.connections[i];
-        var sourceEndpoint = objects.get(c.sourceId).outputEndpoints[c.sourceEndpointName];
-        var targetEndpoint = objects.get(c.targetId).inputEndpoints[c.targetEndpointName];
+        var sourceEndpoint = objects.get(c.sourceId).endpoints.find(function(e) { return e.endpointName === "output" });
+        var targetEndpoint = objects.get(c.targetId).endpoints.find(function(e) { return e.endpointName === c.targetEndpointName });
 
         jsPlumb.connect({ source: sourceEndpoint, target: targetEndpoint });
     }
@@ -256,55 +296,24 @@ window.importBlocks = function(data) {
     jsPlumb.repaintEverything();
 }
 
-function getEndpointName(elementId, endpointObj, type) {
-    var object = objects.get(elementId);
-    if (!object) {
-        throw "No such object";
-    }
-
-    // Assume that all blocks have just one output for now
-    if (type === "output") {
-        return "output";
-    }
-
-    var endpointName = "";
-
-    var endpoints = object.endpoints;
-    for (var i = 0; i < endpoints.length; i++) {
-        if (endpoints[i] === endpointObj) {
-            endpointName = endpoints[i].name;
-            break;
-        }
-    }
-    if (endpointName === "") {
-        throw "Error in connecting; no such endpoint in the element";
-    }
-
-    return endpointName;
-}
-
 var jsPlumbBindHandlers = function () {
     function jsPlumbConnectionHandler(info) {
-        var sourceEndpointName = getEndpointName(info.sourceId, info.sourceEndpoint, "output");
-        var targetEndpointName = getEndpointName(info.targetId, info.targetEndpoint, "input")
+        var targetEndpointName = info.targetEndpoint.endpointName;
 
         connections.push({
             sourceId: info.sourceId,
             targetId: info.targetId,
-            sourceEndpointName: sourceEndpointName,
             targetEndpointName: targetEndpointName
         });
     }
 
     function jsPlumbConnectionDetachedHandler(info) {
-        var sourceEndpointName = getEndpointName(info.sourceId, info.sourceEndpoint, "output");
-        var targetEndpointName = getEndpointName(info.targetId, info.targetEndpoint, "input");
+        var targetEndpointName = info.targetEndpoint.endpointName;
 
         for (var i = 0; i < connections.length; i++) {
             var c = connections[i];
             if (c.sourceId === info.sourceId &&
                 c.targetId === info.targetId &&
-                c.sourceEndpointName === sourceEndpointName &&
                 c.targetEndpointName === targetEndpointName) {
                 // if it's not the last element, put the last element in its place
                 if (i < connections.length - 1) {
@@ -350,6 +359,24 @@ var predefinedBlocks = [
     }
 ];
 
+var constants = new Map();
+constants.set('player_jump_velocity',{
+    value: 'JUMP_VELOCITY',
+    str: "Player Jump Velocity"
+});
+constants.set('player_jump_not_blocked', {
+    value: 'this.player.body.touching.down || this.player.body.blocked.down',
+    str: 'Player jump not blocked'
+});
+constants.set('player_vel_y', {
+    value: 'this.player.body.velocity.y',
+    str: 'player vel Y'
+});
+constants.set('player_vel_x', {
+    value: 'this.player.body.velocity.x',
+    str: 'player vel X'
+});
+
 function registerBlock(block) {
     /*var getParams = function (templateString) {
         var list = templateString.match(/{{[^}]*}}/g);
@@ -388,6 +415,17 @@ window.sendToServer = function() {
     });
 }
 
+window.saveBlocks = function(name) {
+    var j = JSON.stringify(exportBlocks());
+    localStorage[name] = j;
+}
+
+window.loadBlocks = function(name) {
+    unitName = name;
+    var j = JSON.parse(localStorage[unitName]);
+    importBlocks(j);
+}
+
 $(function () {
     jsPlumb.importDefaults({
         EndpointHoverStyle: "cursor: pointer;",
@@ -395,16 +433,14 @@ $(function () {
 
     jsPlumbBindHandlers();
 
-    $("#toolboxSidebar").append('<input type="button" onclick="localStorage[1] = exportBlocks()" value="export"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="localStorage[1] = JSON.stringify(exportBlocks())" value="export"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="Send To Server"></input>');
-    $("#toolboxSidebar").append('<input type="button" onclick="createParameterBlock()" value="Constant"></input>');
-    $("#toolboxSidebar").append('<input type="button" onclick="createParameterBlock()" value="Constant"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="createParameterBlock()" value="New Parameter"></input>');
 
-    registerConstant('JUMP_VELOCITY', 'player jump velocity');
-    registerConstant('this.player.body.touching.down || this.player.body.blocked.down', 'player jump not blocked');
-    registerConstant('this.player.body.velocity.y', 'player vel Y');
-    registerConstant('this.player.body.velocity.x', 'player vel X');
+    constants.forEach(function(constant, constantKey) {
+        registerConstant(constant.value, constant.str);
+    });
 
     predefinedBlocks.forEach(function(block) {
         registerBlock(block);
