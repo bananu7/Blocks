@@ -483,10 +483,18 @@ $(function () {
 
     $("#toolboxSidebar").append('<hr>');
 
-    $("#fieldList").change(function() {
-        saveBlocks(unitName);
-        loadBlocks($(this).val());
-    });
+    (function () {
+        var oldVal;
+
+        $('#fieldList').on('change keypress paste focus textInput input', function () {
+            var val = $(this).val();
+            if (val !== oldVal) {
+                oldVal = val;
+                saveBlocks(unitName);
+                loadBlocks(val);
+            }
+        });
+    }());
 
     constants.forEach(function(constant, constantKey) {
         registerConstant(constant.value, constant.str);
