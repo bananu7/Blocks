@@ -119,10 +119,8 @@ window.createRootBlock = function() {
     return $block;
 }
 
-window.createConstantBlock = function(value, name) {
-    name = name || value;
-
-    var $block = createBlockBase(name);
+window.createConstantBlock = function(value, name, id) {
+    var $block = createBlockBase(name, id);
 
     var endpoints = [];
     var pos = 0.5;
@@ -142,8 +140,8 @@ window.createConstantBlock = function(value, name) {
     return $block;
 }
 
-window.createParameterBlock = function() {
-    var $block = createBlockBase("");
+window.createParameterBlock = function(id) {
+    var $block = createBlockBase("", id);
 
     var $textbox = document.createElement('input');
     $textbox.type = 'text';
@@ -272,6 +270,10 @@ window.importBlocks = function(data) {
     num = 0;
 
     data.objects.forEach(function (object) {
+        if (object.id !== "root" && object.id > num) {
+            num = object.id;
+        }
+
         var $block;
         switch (object.type) {
         case 'root':
@@ -281,10 +283,10 @@ window.importBlocks = function(data) {
             $block = createBlock(object.name, object.id);
             break;
         case 'parameter':
-            $block = createParameterBlock();
+            $block = createParameterBlock(object.id)
             break;
         case 'constant':
-            $block = createConstantBlock(object.value);
+            $block = createConstantBlock(object.value, object.value, object.id);
             break;
         }
 
@@ -294,7 +296,7 @@ window.importBlocks = function(data) {
             top: object.block.position.y,
         })
     });
-    num = data.objects.length;
+    num += 1;
 
     for (var i = 0; i < data.connections.length; i++) {
         var c = data.connections[i];
