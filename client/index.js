@@ -465,9 +465,13 @@ $(function () {
 
     jsPlumbBindHandlers();
 
+    $("#toolboxSidebar").append('<hr>');
+
     $("#toolboxSidebar").append('<input type="button" onclick="saveBlocks(unitName)" value="Save To LocalStorage"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="Send To Server"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="createParameterBlock()" value="New Parameter"></input>');
+
+    $("#toolboxSidebar").append('<hr>');
 
     $("#fieldList").change(function() {
         saveBlocks(unitName);
@@ -477,6 +481,8 @@ $(function () {
     constants.forEach(function(constant, constantKey) {
         registerConstant(constant.value, constant.str);
     });
+
+    $("#toolboxSidebar").append('<hr>');
 
     predefinedBlocks.forEach(function(block) {
         registerBlock(block);
