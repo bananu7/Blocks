@@ -269,6 +269,8 @@ window.importBlocks = function(data) {
     $(".block").remove();
     jsPlumb.reset();
 
+    num = 0;
+
     data.objects.forEach(function (object) {
         var $block;
         switch (object.type) {
@@ -375,6 +377,10 @@ constants.set('player_jump_velocity',{
     value: 'JUMP_VELOCITY',
     str: "Player Jump Velocity"
 });
+constants.set('player_walk_velocity',{
+    value: 'WALKING_VELOCITY',
+    str: "Player Walk Velocity"
+})
 constants.set('player_jump_not_blocked', {
     value: 'this.player.body.touching.down || this.player.body.blocked.down',
     str: 'Player jump not blocked'
