@@ -1,5 +1,6 @@
 ﻿
 Map = require('collections/map.js');
+
 num = 1;
 
 blockDefs = new Map();
@@ -271,7 +272,7 @@ window.importBlocks = function(data) {
 
     data.objects.forEach(function (object) {
         if (object.id !== "root" && object.id > num) {
-            num = object.id;
+            num = Number(object.id);
         }
 
         var $block;
@@ -458,6 +459,11 @@ window.loadBlocks = function(name) {
     }
 }
 
+window.downloadLogicFile = function() {    
+    var blob = new Blob([localStorage[unitName]], {type : 'text/json'});
+    saveAs(blob, unitName + ".json");
+}
+
 $(function () {
     jsPlumb.importDefaults({
         EndpointHoverStyle: "cursor: pointer;",
@@ -469,6 +475,7 @@ $(function () {
 
     $("#toolboxSidebar").append('<input type="button" onclick="saveBlocks(unitName)" value="Save To LocalStorage"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="Send To Server"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="downloadLogicFile()" value="Download Diagram"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="createParameterBlock()" value="New Parameter"></input>');
 
     $("#toolboxSidebar").append('<hr>');
