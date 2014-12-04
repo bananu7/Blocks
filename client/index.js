@@ -457,7 +457,7 @@ $(function () {
 
     jsPlumbBindHandlers();
 
-    $("#toolboxSidebar").append('<input type="button" onclick="saveBlocks(unitName)" value="import"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="saveBlocks(unitName)" value="Save To LocalStorage"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="Send To Server"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="createParameterBlock()" value="New Parameter"></input>');
 
