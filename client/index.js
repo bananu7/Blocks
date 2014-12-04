@@ -141,12 +141,15 @@ window.createConstantBlock = function(value, name, id) {
     return $block;
 }
 
-window.createParameterBlock = function(id) {
+window.createParameterBlock = function(id, initialValue) {
+    if(!initialValue) initialValue = "";
+
     var $block = createBlockBase("", id);
 
     var $textbox = document.createElement('input');
     $textbox.type = 'text';
     $textbox.id = 'parameter_' + $block.id;
+    $textbox.value = initialValue;
     $block.appendChild($textbox);
 
     var endpoints = [];
@@ -284,7 +287,7 @@ window.importBlocks = function(data) {
             $block = createBlock(object.name, object.id);
             break;
         case 'parameter':
-            $block = createParameterBlock(object.id)
+            $block = createParameterBlock(object.id, object.value);
             break;
         case 'constant':
             $block = createConstantBlock(object.value, object.value, object.id);
