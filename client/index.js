@@ -428,7 +428,7 @@ window.sendToServer = function() {
 
 window.saveBlocks = function(name) {
     var j = JSON.stringify(exportBlocks());
-    localStorage[name] = j;
+    localStorage[name]= j;
 }
 
 window.loadBlocks = function(name) {
@@ -442,8 +442,11 @@ window.loadBlocks = function(name) {
             objects: [],
             name: unitName
         };
+
         importBlocks(j);
         createRootBlock();
+
+        saveBlocks(unitName);
     }
 }
 
@@ -454,8 +457,7 @@ $(function () {
 
     jsPlumbBindHandlers();
 
-    $("#toolboxSidebar").append('<input type="button" onclick="localStorage[1] = JSON.stringify(exportBlocks())" value="export"></input>');
-    $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input>');
+    $("#toolboxSidebar").append('<input type="button" onclick="saveBlocks(unitName)" value="import"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="Send To Server"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="createParameterBlock()" value="New Parameter"></input>');
 
@@ -472,5 +474,5 @@ $(function () {
         registerBlock(block);
     });
 
-    createRootBlock();
+    loadBlocks("playerJump");
 });

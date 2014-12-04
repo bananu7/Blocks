@@ -120,14 +120,14 @@ Level1.prototype = {
         }
 
         if (this.cursors.right.isDown || this.dpad.right) {
-            {{{player.moveRight}}}
+            {{{playerMoveRight}}}
         } else if (this.cursors.left.isDown || this.dpad.left) {
-            {{{player.moveLeft}}}
+            {{{playerMoveLeft}}}
         } else {
-            {{{player.notPressingKeys}}}
+            {{{notPressingKeys}}}
         }
         if (this.cursors.up.isDown || this.padButtons.A) {
-            {{{player.jump}}}
+            {{{playerJump}}}
         }
 
         this.updateTimer();

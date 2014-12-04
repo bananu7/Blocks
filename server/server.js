@@ -11,7 +11,7 @@ var fs = require('fs');
 
 var gamelibPath = 'gamelib/';
 
-var logic = require('./logic');
+server.app.logic = require('./logic');
 var blocks = require('./blocks');
 
 function tag(name, attribs, contents)
@@ -27,11 +27,7 @@ function returnApp() {
     var gameScriptSrc = fs.readFileSync(gamelibPath + "js/states/Level1.template.js", {encoding: 'utf8'});
     var gameScriptTemplate = Handlebars.compile(gameScriptSrc);
 
-    //TEMP HACK
-    console.log(server.app.lastResult);
-    logic.player.jump = server.app.lastResult.playerjump;
-    console.log(logic);
-    var gameScript = gameScriptTemplate(logic);
+    var gameScript = gameScriptTemplate(server.app.logic);
 
     var scripts = ""
         + scriptTag("phaser.min.js")
@@ -118,8 +114,10 @@ server.route({
         }
 
         // store last result into a server variable
-        console.log('storing new result');
-        server.app.lastResult = result;
+        for (var x in result) {
+            console.log('storing new result for ' + x);
+            server.app.logic[x] = result[x];
+        }
 
         reply(result);
     }
