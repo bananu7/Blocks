@@ -8,10 +8,15 @@
  
 <body>
     <div id="workspace">
-        <div id="toolboxSidebar"></div>
-        <div id="inputSidebar"></div>
+        <div id="toolboxSidebar">
+            <input list="fields">
+            <datalist id="fields">
+              <option value="playerleft">
+              <option value="playerright">
+              <option value="playerjump">
+            </datalist>
+        </div>
         <div id="content"></div>
-        <div id="outputSidebar"></div>
     </div>
     
     <pre id="output"></pre>
@@ -21,7 +26,9 @@
     <script src="lib/jquery.jsPlumb-1.5.5-min.js" type="text/javascript"></script>
 
     <script type="text/javascript" src="app.js"></script>
+
  
+
 </body>
  
  </html>

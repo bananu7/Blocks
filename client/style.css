@@ -33,20 +33,6 @@ div.closeButton {
     height: 10px;
 }
 
-div#inputSidebar {
-    height: 100vh;
-    width: 100px;
-    background-color: #66cdaa;
-    float: left;
-}
-
-div#outputSidebar {
-    height: 100vh;
-    width: 100px;
-    background-color: #66cdaa;
-    float: right;
-}
-
 .socket {
     width: 100%;
     box-sizing: border-box;
@@ -63,11 +49,20 @@ div#outputSidebar {
 
 div#toolboxSidebar {
     height: 100vh;
-    width: 100px;
+    width: 20vw;
     float: left;
     background-color: #d5a5ff;
+    padding: 5px;
+    box-sizing: border-box;
 }
-div#toolboxSidebar input { clear: both; display: block; }
+div#toolboxSidebar input {
+    clear: both;
+    display: block;
+    margin-bottom: 5px;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 30px;
+}
 
 div#workspace {
     height: 100vh;
