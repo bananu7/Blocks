@@ -1,0 +1,76 @@
+﻿div {
+    margin: 0;
+}
+pre {
+    margin: 0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+div.block {
+    background-color: #36C;
+    min-width: 200px;
+    height: 100px;
+    float: left;
+    padding: 10px;
+            
+    position:absolute;
+}
+
+div.block span {
+    vertical-align: middle;
+    font-size: 2em;
+    font-family: Helvetica;
+    margin: 0px;
+}
+
+div.closeButton {
+    margin: 0px;
+    background-color: #c44;
+    width: 10px;
+    height: 10px;
+}
+
+.socket {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 150px;
+    background-color: #ccc;
+    margin-top: 10px;
+}
+
+.socket input {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+}
+
+div#toolboxSidebar {
+    height: 100vh;
+    width: 20vw;
+    float: left;
+    background-color: #d5a5ff;
+    padding: 5px;
+    box-sizing: border-box;
+}
+div#toolboxSidebar input {
+    clear: both;
+    display: block;
+    margin-bottom: 5px;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 30px;
+}
+
+div#workspace {
+    height: 100vh;
+    width: 100vw;
+}
+
+/* jsPlumb */
+._jsPlumb_endpoint {
+    cursor: pointer;
+    z-index: 100;
+}
