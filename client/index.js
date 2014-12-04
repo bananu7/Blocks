@@ -433,8 +433,18 @@ window.saveBlocks = function(name) {
 
 window.loadBlocks = function(name) {
     unitName = name;
-    var j = JSON.parse(localStorage[unitName]);
-    importBlocks(j);
+    if (localStorage[unitName]) {
+        var j = JSON.parse(localStorage[unitName]);
+        importBlocks(j);
+    } else {
+        var j = {
+            connections: [],
+            objects: [],
+            name: unitName
+        };
+        importBlocks(j);
+        createRootBlock();
+    }
 }
 
 $(function () {
@@ -448,6 +458,11 @@ $(function () {
     $("#toolboxSidebar").append('<input type="button" onclick="importBlocks(localStorage[1])" value="import"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="sendToServer()" value="Send To Server"></input>');
     $("#toolboxSidebar").append('<input type="button" onclick="createParameterBlock()" value="New Parameter"></input>');
+
+    $("#fieldList").change(function() {
+        saveBlocks(unitName);
+        loadBlocks($(this).val());
+    });
 
     constants.forEach(function(constant, constantKey) {
         registerConstant(constant.value, constant.str);
