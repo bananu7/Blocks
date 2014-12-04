@@ -160,6 +160,35 @@ server.route({
     }
 })
 
+server.route({
+    method: 'POST',
+    path: '/levels',
+    handler: function (request, reply) {
+        function decodeBase64Image(dataString) {
+            var matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
+                response = {};
+
+            if (matches.length !== 3) {
+                return new Error('Invalid input string');
+            }
+
+            response.type = matches[1];
+            response.data = new Buffer(matches[2], 'base64');
+
+            return response;
+        }
+
+        var data = request.payload.data;
+        var image = decodeBase64Image(data.tilesets[0].image);
+        var filePath = 'server/data/tilemaps/';
+
+        fs.writeFileSync(filePath + 'super_mario.png', image.data);
+        data.tilesets[0].image = './super_mario.png';
+        fs.writeFileSync(filePath + 'super_mario.json', JSON.stringify(data));
+        reply().code(200);
+    }
+});
+
 server.start(function () {
     console.log('Server running at:', server.info.uri);
 });
