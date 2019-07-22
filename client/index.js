@@ -1,7 +1,4 @@
-﻿
-Map = require('collections/map.js');
-
-num = 1;
+﻿num = 1;
 
 blockDefs = new Map();
 objects = new Map();
@@ -78,8 +75,9 @@ window.createBlockBase = function(displayLabel, id) {
         // remove all the connections from and to it
         jsPlumb.detachAllConnections(this, {fireEvent:false});
         connections.forEach(function(c) {
-            if (c.sourceId === this.id || c.targetId === this.id) 
-                delete c;
+            if (c.sourceId === this.id || c.targetId === this.id) {
+                c = null;
+            }
         });
 
         // Unlink it from DOM
