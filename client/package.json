@@ -7,6 +7,9 @@
     "lib": "lib"
   },
   "dependencies": {
+    "jquery": "^3.4.1",
+    "jquery-ui": "^1.12.1",
+    "jsplumb": "^2.11.1",
     "react": "^16.8.6",
     "react-dom": "^16.8.6"
   },

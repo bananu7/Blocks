@@ -1,11 +1,14 @@
-﻿num = 1;
+﻿import $ from "jquery";
+import {jsPlumb} from "jsplumb";
 
-blockDefs = new Map();
-objects = new Map();
-connections = [];
-unitName = "playerjump";
+let num = 1;
 
- Array.prototype.find = function(predicate) {
+let blockDefs = new Map();
+let objects = new Map();
+let connections = [];
+let unitName = "playerjump";
+
+Array.prototype.find = function(predicate) {
     if (this == null) {
         throw new TypeError('Array.prototype.find called on null or undefined');
     }
@@ -465,7 +468,8 @@ window.downloadLogicFile = function() {
     saveAs(blob, unitName + ".json");
 }
 
-$(function () {
+$(() => {
+    console.log(jsPlumb);
     jsPlumb.importDefaults({
         EndpointHoverStyle: "cursor: pointer;",
     });
