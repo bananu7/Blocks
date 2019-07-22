@@ -1,2 +1,2 @@
-# Browserify build file
-app.js
+# webpack output
+assets/
